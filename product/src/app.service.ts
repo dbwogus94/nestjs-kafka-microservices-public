@@ -1,12 +1,65 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { ClientKafka, RpcException } from '@nestjs/microservices';
+import { HttpService } from '@nestjs/axios';
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  LoggerService,
+  NotFoundException,
+} from '@nestjs/common';
+import { AxiosRequestConfig } from 'axios';
+import { catchError } from 'rxjs';
+import { ProducerService } from './kafka/producer.service';
+import { CreateProductDTO, UpdateProductDTO } from './product.dto';
 import { Product } from './product.entity';
 
 @Injectable()
 export class AppService {
+  private readonly logTag = 'AppService';
+  private readonly stockHost = 'http://localhost:3002/stocks';
+  private readonly axiosConfig: AxiosRequestConfig = {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  };
+
   constructor(
-    @Inject('STOCK_SERVICE') private readonly stockClient: ClientKafka,
+    @Inject(Logger)
+    private readonly logger: LoggerService,
+    private httpService: HttpService,
+    private readonly producer: ProducerService,
   ) {}
+
+  private toSendData(data: object) {
+    return JSON.stringify(data);
+  }
+
+  /* ============ send kafka ============= */
+
+  async sendCreateProduct(createDto: CreateProductDTO) {
+    const value: string = this.toSendData({ createDto });
+    await this.producer.produce({
+      topic: 'product_created',
+      messages: [{ value }],
+    });
+  }
+
+  async sendUpdateProduct(productId: number, updateDto: UpdateProductDTO) {
+    const value: string = this.toSendData({ productId, updateDto });
+    await this.producer.produce({
+      topic: 'product_updated',
+      messages: [{ value }],
+    });
+  }
+
+  async sendDeleteProduct(productId: number) {
+    const value: string = this.toSendData({ productId });
+    await this.producer.produce({
+      topic: 'product_deleted',
+      messages: [{ value }],
+    });
+  }
+  /* ========================== */
 
   async getProducts() {
     return Product.find();
@@ -19,25 +72,33 @@ export class AppService {
       .getOne();
   }
 
-  async createProduct(createDto: Product) {
+  async createProduct(createDto: CreateProductDTO) {
     const product = Product.create(createDto);
 
     try {
       await Product.save(product);
     } catch (error) {
-      console.error(error);
-      throw new RpcException(error.toString());
-      // => RpcExceptionFilter받아서 api-gateway로 보낼 수 있다
+      this.logger.error(error, error.stack, this.logTag);
+      throw new InternalServerErrorException(error);
     }
 
-    // 재고 서비스에 재고 생성 event로 요청
-    this.stockClient.emit('stock_created', product.id); // =>  @EventPattern('stock_created')에서 받는다.
+    // TODO: 재고 서비스에 재고 생성 axios로 요청 => 에러시 ??
+    // this.httpService
+    //   .post(
+    //     this.stockHost,
+    //     {
+    //       productId: product.id,
+    //     },
+    //     this.axiosConfig,
+    //   )
+    //   .pipe(catchError((e) => this.logger.error(e, e.stack, this.logTag)))
+    //   .subscribe();
+
     return product;
   }
 
-  async updateProduct(updateDto: Product) {
-    const { id } = updateDto;
-    const product = await this.getProduct(id);
+  async updateProduct(productId: number, updateDto: UpdateProductDTO) {
+    const product = await this.getProduct(productId);
     if (!product) {
       return null;
     }
@@ -47,21 +108,23 @@ export class AppService {
       await Product.save(newProduct);
       return newProduct;
     } catch (error) {
-      console.error(error);
-      throw new RpcException(error.toString());
+      this.logger.error(error, error.stack, this.logTag);
+      throw new InternalServerErrorException(error);
     }
   }
 
   async deleteProduct(productId: number) {
     const product = await this.getProduct(productId);
     if (!product) {
-      return null;
+      throw new NotFoundException();
     }
 
     await Product.softRemove(product);
 
-    // 재고 서비스에 소프트 삭제 event로 요청
-    this.stockClient.emit('stock_deleted', productId); // @EventPattern('stock_deleted')에서 받는다
-    return true;
+    // TODO: 재고 서비스에 재고 삭제 요청 => 에러시 ??
+    // this.httpService
+    //   .delete(`${this.stockHost}/${productId}`, this.axiosConfig)
+    //   .pipe(catchError((e) => this.logger.error(e, e.stack, this.logTag)))
+    //   .subscribe();
   }
 }

@@ -1,38 +1,56 @@
-import { Controller, UseFilters } from '@nestjs/common';
-import { MessagePattern } from '@nestjs/microservices';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { AppService } from './app.service';
-import { ExceptionFilter } from './common/rpc-exception.fillter';
+import { CreateProductDTO, UpdateProductDTO } from './product.dto';
 
-@Controller()
+@Controller('products')
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @MessagePattern('product_selectAll')
+  @Get()
   getProducts() {
     return this.appService.getProducts();
   }
 
-  @MessagePattern('product_selectOne')
-  // TODO: @Payload() 동작 방법 찾기
-  // getProduct(@Payload() message: any, @Ctx() context: KafkaContext) {
-  getProduct(message: any) {
-    return this.appService.getProduct(message.value);
+  @Get('/:id')
+  getProduct(@Param('id', new ParseIntPipe()) productId: number) {
+    return this.appService.getProduct(productId);
   }
 
-  @UseFilters(new ExceptionFilter()) // new RpcException() 예외를 받아서 처리하는 필터.
-  @MessagePattern('product_created')
-  createProduct(message: any) {
-    return this.appService.createProduct(message.value);
+  @Post()
+  @HttpCode(201)
+  createProduct(@Body() createDto: CreateProductDTO) {
+    // 카프카로
+    return this.appService.sendCreateProduct(createDto);
+    // return this.appService.createProduct(createDto);
   }
 
-  @UseFilters(new ExceptionFilter())
-  @MessagePattern('product_updated')
-  updateProduct(message: any) {
-    return this.appService.updateProduct(message.value);
+  @Patch('/:id')
+  @HttpCode(201)
+  updateProduct(
+    // 카프카로
+    @Param('id', new ParseIntPipe()) productId: number,
+    @Body() updateDto: UpdateProductDTO,
+  ) {
+    return this.appService.sendUpdateProduct(productId, updateDto);
+    // return this.appService.updateProduct(productId, updateDto);
   }
 
-  @MessagePattern('product_deleted')
-  deleteProduct(message: any) {
-    return this.appService.deleteProduct(message.value);
+  @Delete('/:id')
+  @HttpCode(204)
+  async deleteProduct(
+    @Param('id', new ParseIntPipe()) productId: number,
+  ): Promise<void> {
+    await this.appService.sendDeleteProduct(productId);
+    //await this.appService.deleteProduct(productId);
   }
 }
