@@ -31,7 +31,7 @@ export class Stock extends Timestamp {
   waste: number;
 
   @Expose()
-  @Column('integer', { comment: '상품 id, (FK)' })
+  @Column('integer', { comment: '상품 id, (FK)', unique: true })
   @Type(() => Number)
   @IsNumber()
   productId: number;
