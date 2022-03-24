@@ -39,6 +39,11 @@ export class AppService {
   }
 
   async sendDeleteStock(productId: number) {
+    const stock = await Stock.findOne({ where: { productId } });
+    if (!stock) {
+      throw new NotFoundException();
+    }
+
     try {
       const value: string = this.toSendData({ productId });
       await this.producer.produce({
@@ -67,11 +72,6 @@ export class AppService {
 
   async deleteStock(productId: number) {
     const stock = await Stock.findOne({ where: { productId } });
-
-    if (!stock) {
-      throw new NotFoundException();
-    }
-
     await stock.softRemove();
   }
 }
