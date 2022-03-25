@@ -8,6 +8,7 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
+import { ConsumerRunConfig, ConsumerSubscribeTopic } from 'kafkajs';
 import { LoggerOptions } from 'typeorm';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { BaseConfig } from './base.config';
@@ -78,11 +79,26 @@ export class DatabaseConfig implements PostgresConnectionOptions {
   cli: DatabaseCliConfig = new DatabaseCliConfig();
 }
 
+export class ConsumerGroupConfig {
+  @IsNotEmpty()
+  @IsString()
+  groupName: string;
+
+  @IsNotEmpty()
+  topics: ConsumerSubscribeTopic[];
+
+  consumerRunConfig?: ConsumerRunConfig; // 그룹이 사용할 autoCommit 정책등 설정
+}
+
 export class KafkaConfig {
   @IsNotEmpty()
   @IsArray()
   @ArrayMinSize(1)
   brokers: string[];
+
+  @IsNotEmpty()
+  @ValidateNested()
+  product: ConsumerGroupConfig; // 상품 컨슈머 그룹 설정
 }
 
 /**
@@ -93,13 +109,15 @@ export class SchemaConfig extends BaseConfig {
   @IsNotEmpty()
   readonly port: number = 8080;
 
-  @ValidateNested()
   @IsNotEmpty()
+  @ValidateNested()
   @Type(() => DatabaseConfig)
   readonly database: DatabaseConfig = new DatabaseConfig();
 
-  @ValidateNested()
   @IsNotEmpty()
+  @ValidateNested()
   @Type(() => KafkaConfig)
   readonly kafka: KafkaConfig = new KafkaConfig();
+
+  readonly axios: any;
 }

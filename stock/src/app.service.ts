@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ProducerService } from './kafka/producer.service';
-import { CreateStockDto, DeleteStockDto } from './stock.dto';
+import { CreateStockDto } from './stock.dto';
 import { Stock } from './stock.entity';
 
 @Injectable()
@@ -28,7 +28,7 @@ export class AppService {
     const value: string = this.toSendData({ createDto });
     try {
       await this.producer.produce({
-        topic: 'stock_created',
+        topic: process.env.STOCK_CONSUMER_CREATE_TOPIC,
         messages: [{ value }],
       });
     } catch (error) {
@@ -47,7 +47,7 @@ export class AppService {
     try {
       const value: string = this.toSendData({ productId });
       await this.producer.produce({
-        topic: 'stock_deleted',
+        topic: process.env.STOCK_CONSUMER_DELETE_TOPIC,
         messages: [{ value }],
       });
     } catch (error) {

@@ -13,5 +13,13 @@ export default SchemaConfig.from({
 
   kafka: {
     brokers: [process.env.KAFKA_BROKER_1],
+    product: {
+      groupName: process.env.PRODUCT_CONSUMER_NAME,
+      topics: [
+        { topic: process.env.PRODUCT_CONSUMER_CREATE_TOPIC },
+        { topic: process.env.PRODUCT_CONSUMER_UPDATE_TOPIC },
+        { topic: process.env.PRODUCT_CONSUMER_DELETE_TOPIC },
+      ],
+    },
   },
 });

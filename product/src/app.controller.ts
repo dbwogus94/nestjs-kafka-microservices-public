@@ -1,5 +1,6 @@
 import {
   Body,
+  ClassSerializerInterceptor,
   Controller,
   Delete,
   Get,
@@ -8,10 +9,12 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AppService } from './app.service';
 import { CreateProductDTO, UpdateProductDTO } from './product.dto';
 
+@UseInterceptors(ClassSerializerInterceptor)
 @Controller('products')
 export class AppController {
   constructor(private readonly appService: AppService) {}
@@ -29,20 +32,16 @@ export class AppController {
   @Post()
   @HttpCode(201)
   createProduct(@Body() createDto: CreateProductDTO) {
-    // 카프카로
     return this.appService.sendCreateProduct(createDto);
-    // return this.appService.createProduct(createDto);
   }
 
   @Patch('/:id')
   @HttpCode(201)
   updateProduct(
-    // 카프카로
     @Param('id', new ParseIntPipe()) productId: number,
     @Body() updateDto: UpdateProductDTO,
   ) {
     return this.appService.sendUpdateProduct(productId, updateDto);
-    // return this.appService.updateProduct(productId, updateDto);
   }
 
   @Delete('/:id')
@@ -51,6 +50,5 @@ export class AppController {
     @Param('id', new ParseIntPipe()) productId: number,
   ): Promise<void> {
     await this.appService.sendDeleteProduct(productId);
-    //await this.appService.deleteProduct(productId);
   }
 }

@@ -1,7 +1,6 @@
 import {
   Inject,
   Injectable,
-  InternalServerErrorException,
   Logger,
   LoggerService,
   OnApplicationShutdown,
@@ -23,7 +22,7 @@ export class ConsumerService implements OnApplicationShutdown {
   private readonly consumerGroups: Consumer[] = [];
 
   constructor(
-    private configService: ConfigService,
+    private readonly configService: ConfigService,
     @Inject(Logger)
     private readonly logger: LoggerService,
   ) {
@@ -54,7 +53,6 @@ export class ConsumerService implements OnApplicationShutdown {
   async onApplicationShutdown() {
     try {
       await Promise.all(
-        // 각각의 컨슈머 그룹 연결 끊기
         this.consumerGroups.map(async (consumer) => consumer.disconnect()),
       );
     } catch (error) {

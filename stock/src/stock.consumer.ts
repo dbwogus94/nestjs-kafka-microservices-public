@@ -1,12 +1,15 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { plainToInstance } from 'class-transformer';
 import { AppService } from './app.service';
+import { KafkaConfig } from './config/schema.config';
 import { ConsumerService } from './kafka/consumer.service';
 import { CreateStockDto } from './stock.dto';
 
 @Injectable()
 export class StockConsumer implements OnModuleInit {
   constructor(
+    private readonly configService: ConfigService,
     private readonly consumerService: ConsumerService,
     private readonly appService: AppService,
   ) {}
@@ -24,17 +27,19 @@ export class StockConsumer implements OnModuleInit {
   }
 
   async onModuleInit() {
-    const topics = [{ topic: 'stock_created' }, { topic: 'stock_deleted' }];
+    const { stock } = this.configService.get<KafkaConfig>('kafka');
+    const { groupName, topics } = stock;
+
     try {
       await this.consumerService.consume(
-        { groupId: 'stock-consumer' },
+        { groupId: groupName }, //
         topics,
         {
           eachMessage: async ({ topic, partition, message }) => {
             switch (topic) {
-              case 'stock_created':
+              case process.env.STOCK_CONSUMER_CREATE_TOPIC:
                 return this.createCunsume(message.value.toString());
-              case 'stock_deleted':
+              case process.env.STOCK_CONSUMER_DELETE_TOPIC:
                 return this.deleteCunsume(message.value.toString());
             }
           },

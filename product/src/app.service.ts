@@ -7,6 +7,7 @@ import {
   LoggerService,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AxiosRequestConfig } from 'axios';
 import { catchError } from 'rxjs';
 import { ProducerService } from './kafka/producer.service';
@@ -16,6 +17,8 @@ import { Product } from './product.entity';
 @Injectable()
 export class AppService {
   private readonly logTag = 'AppService';
+
+  // TODO: 설정으로
   private readonly stockHost = 'http://localhost:3002/stocks';
   private readonly axiosConfig: AxiosRequestConfig = {
     headers: {
@@ -26,6 +29,7 @@ export class AppService {
   constructor(
     @Inject(Logger)
     private readonly logger: LoggerService,
+    private readonly configService: ConfigService,
     private httpService: HttpService,
     private readonly producer: ProducerService,
   ) {}
@@ -39,7 +43,7 @@ export class AppService {
   async sendCreateProduct(createDto: CreateProductDTO) {
     const value: string = this.toSendData({ createDto });
     await this.producer.produce({
-      topic: 'product_created',
+      topic: process.env.PRODUCT_CONSUMER_CREATE_TOPIC,
       messages: [{ value }],
     });
   }
@@ -52,7 +56,7 @@ export class AppService {
 
     const value: string = this.toSendData({ productId, updateDto });
     await this.producer.produce({
-      topic: 'product_updated',
+      topic: process.env.PRODUCT_CONSUMER_UPDATE_TOPIC,
       messages: [{ value }],
     });
   }
@@ -65,7 +69,7 @@ export class AppService {
 
     const value: string = this.toSendData({ productId });
     await this.producer.produce({
-      topic: 'product_deleted',
+      topic: process.env.PRODUCT_CONSUMER_DELETE_TOPIC,
       messages: [{ value }],
     });
   }
