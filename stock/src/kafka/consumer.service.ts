@@ -1,7 +1,6 @@
 import {
   Inject,
   Injectable,
-  InternalServerErrorException,
   Logger,
   LoggerService,
   OnApplicationShutdown,
@@ -20,7 +19,7 @@ import { KafkaConfig } from 'src/config/schema.config';
 export class ConsumerService implements OnApplicationShutdown {
   private readonly logTag = 'ConsumerService';
   private readonly kafka: Kafka;
-  private readonly consumers: Consumer[] = [];
+  private readonly consumerGroups: Consumer[] = [];
 
   constructor(
     private configService: ConfigService,
@@ -33,25 +32,25 @@ export class ConsumerService implements OnApplicationShutdown {
 
   async consume(
     consumerConfig: ConsumerConfig,
-    topic: ConsumerSubscribeTopic,
+    topics: ConsumerSubscribeTopic[],
     consumerRunConfig: ConsumerRunConfig,
   ) {
-    const consumer = this.kafka.consumer(consumerConfig); //{ groupId: 'nestjs-kafka' }
+    const consumer = this.kafka.consumer(consumerConfig);
     try {
       await consumer.connect();
-      await consumer.subscribe(topic);
+      await Promise.all(topics.map(async (topic) => consumer.subscribe(topic)));
       await consumer.run(consumerRunConfig);
-      this.consumers.push(consumer);
     } catch (error) {
       this.logger.error(error, error.stack, this.logTag);
-      throw new InternalServerErrorException(error);
+      throw error;
     }
+    this.consumerGroups.push(consumer);
   }
 
   async onApplicationShutdown() {
     try {
       await Promise.all(
-        this.consumers.map(async (consumer) => consumer.disconnect()),
+        this.consumerGroups.map(async (consumer) => consumer.disconnect()),
       );
     } catch (error) {
       this.logger.error(error, error.stack, this.logTag);

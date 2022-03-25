@@ -6,8 +6,6 @@ import { CreateProductDTO, UpdateProductDTO } from './product.dto';
 
 @Injectable()
 export class ProductConsumer implements OnModuleInit {
-  private readonly consumerGroup = 'product-consumer';
-
   constructor(
     private readonly consumerService: ConsumerService,
     private readonly appService: AppService,
@@ -33,35 +31,31 @@ export class ProductConsumer implements OnModuleInit {
     await this.appService.deleteProduct(productId);
   }
 
+  // TODO: 로직 개선예정
   async onModuleInit() {
+    const topics = [
+      { topic: 'product_created' },
+      { topic: 'product_updated' },
+      { topic: 'product_deleted' },
+    ];
+
     try {
-      await Promise.all([
-        this.consumerService.consume(
-          { groupId: this.consumerGroup },
-          { topic: 'product_created' },
-          {
-            eachMessage: async ({ message }) =>
-              this.createCunsume(message.value.toString()),
+      await this.consumerService.consume(
+        { groupId: 'product-consumer' },
+        topics,
+        {
+          eachMessage: async ({ topic, partition, message }) => {
+            switch (topic) {
+              case 'product_created':
+                return this.createCunsume(message.value.toString());
+              case 'product_updated':
+                return this.updateCunsume(message.value.toString());
+              case 'product_deleted':
+                return this.deleteCunsume(message.value.toString());
+            }
           },
-        ),
-        // TODO: 동시에 여러개를 등록하면 토픽은 생성되지만 컨슈머 그룹이 할당되지 않는 문제 있음...
-        // this.consumerService.consume(
-        //   { groupId: this.consumerGroup },
-        //   { topic: 'product_updated' },
-        //   {
-        //     eachMessage: async ({ message }) =>
-        //       this.updateCunsume(message.value.toString()),
-        //   },
-        // ),
-        // this.consumerService.consume(
-        //   { groupId: this.consumerGroup },
-        //   { topic: 'product_deleted' },
-        //   {
-        //     eachMessage: async ({ message }) =>
-        //       this.deleteCunsume(message.value.toString()),
-        //   },
-        // ),
-      ]);
+        },
+      );
     } catch (error) {
       console.error(error);
     }

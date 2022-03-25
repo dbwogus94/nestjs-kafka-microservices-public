@@ -20,7 +20,7 @@ import { KafkaConfig } from 'src/config/schema.config';
 export class ConsumerService implements OnApplicationShutdown {
   private readonly logTag = 'ConsumerService';
   private readonly kafka: Kafka;
-  private readonly consumers: Consumer[] = [];
+  private readonly consumerGroups: Consumer[] = [];
 
   constructor(
     private configService: ConfigService,
@@ -33,25 +33,29 @@ export class ConsumerService implements OnApplicationShutdown {
 
   async consume(
     consumerConfig: ConsumerConfig,
-    topic: ConsumerSubscribeTopic,
+    topics: ConsumerSubscribeTopic[],
     consumerRunConfig: ConsumerRunConfig,
   ) {
-    const consumer = this.kafka.consumer(consumerConfig); //{ groupId: 'nestjs-kafka' }
+    const consumer = this.kafka.consumer(consumerConfig);
     try {
+      // 컨슈머 그룹당 하나의 연결만 가능하다. => 여러개 선언시? 에러는 나지 않지만 토픽에 컨슈머 그룹이 할당되지 못한다.
       await consumer.connect();
-      await consumer.subscribe(topic);
+      // 토픽은 여러개 설정 가능하다.
+      await Promise.all(topics.map(async (topic) => consumer.subscribe(topic)));
+      // 컨슈머 그룹이 토픽을 읽어오는 로직(run)은 1개만 선언이 가능하다. => 여러개 선언시? 최초 선언 이후 무시된다.
       await consumer.run(consumerRunConfig);
-      this.consumers.push(consumer);
     } catch (error) {
       this.logger.error(error, error.stack, this.logTag);
-      throw new InternalServerErrorException(error);
+      throw error;
     }
+    this.consumerGroups.push(consumer);
   }
 
   async onApplicationShutdown() {
     try {
       await Promise.all(
-        this.consumers.map(async (consumer) => consumer.disconnect()),
+        // 각각의 컨슈머 그룹 연결 끊기
+        this.consumerGroups.map(async (consumer) => consumer.disconnect()),
       );
     } catch (error) {
       this.logger.error(error, error.stack, this.logTag);

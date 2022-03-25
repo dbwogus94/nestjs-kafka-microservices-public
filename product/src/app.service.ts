@@ -45,7 +45,7 @@ export class AppService {
   }
 
   async sendUpdateProduct(productId: number, updateDto: UpdateProductDTO) {
-    const product = await this.getProduct(productId); // TODO: 토픽에 들어가기전? 조회로 막아야 하나?
+    const product = await this.getProduct(productId);
     if (!product) {
       throw new NotFoundException();
     }
@@ -58,7 +58,7 @@ export class AppService {
   }
 
   async sendDeleteProduct(productId: number) {
-    const product = await this.getProduct(productId); // TODO: 토픽에 들어가기전? 조회로 막아야 하나?
+    const product = await this.getProduct(productId);
     if (!product) {
       throw new NotFoundException();
     }
@@ -92,7 +92,7 @@ export class AppService {
       throw new InternalServerErrorException(error);
     }
 
-    // TODO: 재고 서비스에 재고 생성 axios로 요청 => 에러시 ??
+    // TODO: 재고 서비스에 재고 생성 axios로 요청 => 서버가 죽어 있다면 롤백 시키고 에러를 내보내야 한다.
     this.httpService
       .post(
         this.stockHost,
@@ -121,10 +121,14 @@ export class AppService {
   }
 
   async deleteProduct(productId: number) {
-    const product = await this.getProduct(productId);
-    await Product.softRemove(product); // pk로 삭제하는 방법은?
+    const product = await this.getProduct(productId); // TODO: 조회 하지 말고 pk 삭제로 변경하자.
+    await Product.softRemove(product);
 
-    // TODO: 재고 서비스에 재고 삭제 요청 => 재고 pk를 알지 못한다 그러면 DELETE 요청에 productId를 어떻게 넘길 수 있을까?
+    // TODO: 재고 서비스에 재고 삭제 요청
+    // => 재고 pk를 알지 못한다 그러면 DELETE 요청에 productId를 어떻게 넘길 수 있을까?
+    // 방법 1. 상품코드없이 재고를 조회를 생각하지 않는다.
+    // 방법 2. api를 DELETE products/1/stock 으로 만든다. (의미: 상품 1번의 재고를 삭제한다.)
+
     this.httpService
       .delete(`${this.stockHost}/${productId}`, this.axiosConfig)
       .pipe(catchError((e) => this.logger.error(e, e.stack, this.logTag)))
