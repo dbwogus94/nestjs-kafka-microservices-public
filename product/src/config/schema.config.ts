@@ -82,7 +82,7 @@ export class DatabaseConfig implements PostgresConnectionOptions {
 export class ConsumerGroupConfig {
   @IsNotEmpty()
   @IsString()
-  groupName: string;
+  groupId: string;
 
   @IsNotEmpty()
   topics: ConsumerSubscribeTopic[];

@@ -37,22 +37,34 @@ export class ProductConsumer implements OnModuleInit {
   // TODO: 로직 개선예정
   async onModuleInit() {
     const { product } = this.configService.get<KafkaConfig>('kafka');
-    const { groupName, topics } = product;
-
+    const { groupId, topics } = product;
     try {
       await this.consumerService.consume(
-        { groupId: groupName }, //
+        { groupId }, //
         topics,
         {
-          // TODO: topic 하드코딩 개선 예정
+          // autoCommit: false, => 기본 true
           eachMessage: async ({ topic, partition, message }) => {
-            switch (topic) {
-              case process.env.PRODUCT_CONSUMER_CREATE_TOPIC:
-                return this.createCunsume(message.value.toString());
-              case process.env.PRODUCT_CONSUMER_UPDATE_TOPIC:
-                return this.updateCunsume(message.value.toString());
-              case process.env.PRODUCT_CONSUMER_DELETE_TOPIC:
-                return this.deleteCunsume(message.value.toString());
+            try {
+              switch (topic) {
+                case process.env.PRODUCT_CONSUMER_CREATE_TOPIC:
+                  await this.createCunsume(message.value.toString());
+                  break;
+                case process.env.PRODUCT_CONSUMER_UPDATE_TOPIC:
+                  await this.updateCunsume(message.value.toString());
+                  break;
+                case process.env.PRODUCT_CONSUMER_DELETE_TOPIC:
+                  await this.deleteCunsume(message.value.toString());
+                  break;
+                default:
+                  throw new Error(`Not Found Topic(${topic}) Handler`);
+              }
+            } catch (error) {
+              console.error(error);
+              // throw error;
+              return;
+              // TODO: autoCommit 비활성화시 에러를 던지지 않으면 메세지는 처리한 것으로 취급된다.
+              // 에러 처리를 어떻게 해야할지 연구가 필요하다.
             }
           },
         },

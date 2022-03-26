@@ -19,7 +19,7 @@ import { KafkaConfig } from 'src/config/schema.config';
 export class ConsumerService implements OnApplicationShutdown {
   private readonly logTag = 'ConsumerService';
   private readonly kafka: Kafka;
-  private readonly consumerGroups: Consumer[] = [];
+  private readonly consumerGroups: { [k in string]: Consumer } = {};
 
   constructor(
     private readonly configService: ConfigService,
@@ -47,13 +47,20 @@ export class ConsumerService implements OnApplicationShutdown {
       this.logger.error(error, error.stack, this.logTag);
       throw error;
     }
-    this.consumerGroups.push(consumer);
+    const { groupId } = consumerConfig;
+    this.consumerGroups[groupId] = consumer;
   }
+
+  // getConsumer(groupId: string): Consumer | undefined {
+  //   return this.consumerGroups[groupId];
+  // }
 
   async onApplicationShutdown() {
     try {
       await Promise.all(
-        this.consumerGroups.map(async (consumer) => consumer.disconnect()),
+        Object.values(this.consumerGroups).map(async (consumer) =>
+          consumer.disconnect(),
+        ),
       );
     } catch (error) {
       this.logger.error(error, error.stack, this.logTag);
