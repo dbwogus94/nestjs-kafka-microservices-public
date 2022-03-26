@@ -7,9 +7,9 @@ import {
   LoggerService,
   NotFoundException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { AxiosRequestConfig } from 'axios';
-import { catchError } from 'rxjs';
+import { InjectConnection } from '@nestjs/typeorm';
+import { AxiosInstance, AxiosRequestConfig } from 'axios';
+import { Connection } from 'typeorm';
 import { ProducerService } from './kafka/producer.service';
 import { CreateProductDTO, UpdateProductDTO } from './product.dto';
 import { Product } from './product.entity';
@@ -19,6 +19,7 @@ export class AppService {
   private readonly logTag = 'AppService';
 
   // TODO: 설정으로
+  private readonly axios: AxiosInstance;
   private readonly stockHost = 'http://localhost:3002/stocks';
   private readonly axiosConfig: AxiosRequestConfig = {
     headers: {
@@ -29,10 +30,14 @@ export class AppService {
   constructor(
     @Inject(Logger)
     private readonly logger: LoggerService,
-    private readonly configService: ConfigService,
     private httpService: HttpService,
     private readonly producer: ProducerService,
-  ) {}
+    @InjectConnection()
+    private readonly connection: Connection,
+  ) {
+    // axiosRef는 순수 axios 인스턴스를 리턴한다.
+    this.axios = this.httpService.axiosRef;
+  }
 
   private toSendData(data: object) {
     return JSON.stringify(data);
@@ -49,7 +54,7 @@ export class AppService {
   }
 
   async sendUpdateProduct(productId: number, updateDto: UpdateProductDTO) {
-    const product = await this.getProduct(productId);
+    const product = await this.getProduct(productId); // 가격 정보
     if (!product) {
       throw new NotFoundException();
     }
@@ -87,27 +92,27 @@ export class AppService {
   }
 
   async createProduct(createDto: CreateProductDTO) {
-    const product = Product.create(createDto);
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
+    const product = Product.create(createDto);
     try {
       await Product.save(product);
+      await this.axios.post(
+        this.stockHost,
+        { productId: product.id },
+        this.axiosConfig,
+      );
+
+      await queryRunner.commitTransaction();
     } catch (error) {
       this.logger.error(error, error.stack, this.logTag);
+      await queryRunner.rollbackTransaction();
       throw new InternalServerErrorException(error);
+    } finally {
+      await queryRunner.release();
     }
-
-    // TODO: 재고 서비스에 재고 생성 axios로 요청 => 서버가 죽어 있다면 롤백 시키고 에러를 내보내야 한다.
-    this.httpService
-      .post(
-        this.stockHost,
-        {
-          productId: product.id,
-        },
-        this.axiosConfig,
-      )
-      .pipe(catchError((e) => this.logger.error(e, e.stack, this.logTag)))
-      .subscribe();
-
     return product;
   }
 
@@ -125,17 +130,30 @@ export class AppService {
   }
 
   async deleteProduct(productId: number) {
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     const product = await this.getProduct(productId); // TODO: 조회 하지 말고 pk 삭제로 변경하자.
-    await Product.softRemove(product);
+    try {
+      await Product.softRemove(product);
 
-    // TODO: 재고 서비스에 재고 삭제 요청
-    // => 재고 pk를 알지 못한다 그러면 DELETE 요청에 productId를 어떻게 넘길 수 있을까?
-    // 방법 1. 상품코드없이 재고를 조회를 생각하지 않는다.
-    // 방법 2. api를 DELETE products/1/stock 으로 만든다. (의미: 상품 1번의 재고를 삭제한다.)
+      // TODO: 재고 서비스에 재고 삭제 요청
+      // => 재고 pk를 알지 못한다 그러면 DELETE 요청에 productId를 어떻게 넘길 수 있을까?
+      // 방법 1. 상품코드없이 재고를 조회를 생각하지 않는다.
+      // 방법 2. api를 DELETE products/1/stock 으로 만든다. (의미: 상품 1번의 재고를 삭제한다.)
+      await this.axios.delete(
+        `${this.stockHost}/${productId}`,
+        this.axiosConfig,
+      );
 
-    this.httpService
-      .delete(`${this.stockHost}/${productId}`, this.axiosConfig)
-      .pipe(catchError((e) => this.logger.error(e, e.stack, this.logTag)))
-      .subscribe();
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      this.logger.error(error, error.stack, this.logTag);
+      await queryRunner.rollbackTransaction();
+      throw new InternalServerErrorException(error);
+    } finally {
+      await queryRunner.release();
+    }
   }
 }
