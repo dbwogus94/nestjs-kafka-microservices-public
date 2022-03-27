@@ -22,7 +22,7 @@ export class ProductProducer {
     private readonly logger: LoggerService,
   ) {}
 
-  private toSendData(data: object) {
+  private toSendData(data: any) {
     return JSON.stringify(data);
   }
 
