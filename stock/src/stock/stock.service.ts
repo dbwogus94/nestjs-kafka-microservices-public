@@ -6,7 +6,6 @@ import {
   LoggerService,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateStockDto } from './stock.dto';
 import { Stock } from './stock.entity';
 
 @Injectable()
@@ -28,8 +27,7 @@ export class StockService {
     return stock;
   }
 
-  async createStock(createDto: CreateStockDto) {
-    const { productId } = createDto;
+  async createStock(productId: number) {
     const stock = Stock.create({ productId });
     try {
       await Stock.save(stock);

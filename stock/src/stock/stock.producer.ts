@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ProducerService } from 'src/kafka/producer.service';
-import { CreateStockDto } from './stock.dto';
 import { StockService } from './stock.service';
 
 @Injectable()
@@ -26,8 +25,8 @@ export class StockProducer {
     return JSON.stringify(data);
   }
 
-  async sendCreateStock(createDto: CreateStockDto) {
-    const value: string = this.toSendData({ createDto });
+  async sendCreateStock(productId: number) {
+    const value: string = this.toSendData({ productId });
     try {
       await this.producerService.produce({
         topic: process.env.STOCK_CONSUMER_CREATE_TOPIC,

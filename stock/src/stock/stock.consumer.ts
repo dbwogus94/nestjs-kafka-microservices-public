@@ -1,9 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { plainToInstance } from 'class-transformer';
 import { KafkaConfig } from '../config/schema.config';
 import { ConsumerService } from '../kafka/consumer.service';
-import { CreateStockDto } from './stock.dto';
 import { StockService } from './stock.service';
 
 @Injectable()
@@ -15,10 +13,8 @@ export class StockConsumer implements OnModuleInit {
   ) {}
 
   private async createCunsume(value: string) {
-    const { createDto } = JSON.parse(value);
-    await this.stockService.createStock(
-      plainToInstance(CreateStockDto, createDto),
-    );
+    const { productId } = JSON.parse(value);
+    await this.stockService.createStock(productId);
   }
 
   private async deleteCunsume(value: string) {

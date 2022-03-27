@@ -1,5 +1,4 @@
 import {
-  Body,
   ClassSerializerInterceptor,
   Controller,
   Delete,
@@ -12,7 +11,6 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { SenderDTO } from 'src/common/dto/sender.dto';
-import { CreateStockDto } from './stock.dto';
 import { StockProducer } from './stock.producer';
 import { StockService } from './stock.service';
 
@@ -33,12 +31,12 @@ export class StockController {
   @HttpCode(201)
   createStock(
     @Query() senderDto: SenderDTO,
-    @Body() createDto: CreateStockDto,
+    @Param('productId', new ParseIntPipe()) productId: number,
   ) {
     const { sender } = senderDto;
     return sender === 'gateway'
-      ? this.stockService.createStock(createDto)
-      : this.stockProducer.sendCreateStock(createDto);
+      ? this.stockService.createStock(productId)
+      : this.stockProducer.sendCreateStock(productId);
   }
 
   @Delete() // TODO: 상품이 제거되면서 오는 요청은  productId가 필요한 하다 어떻게 처리할까??

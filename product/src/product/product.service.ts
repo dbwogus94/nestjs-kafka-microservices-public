@@ -87,8 +87,8 @@ export class ProductService {
     try {
       await Product.save(product);
       await this.axios.post(
-        this.stockHost,
-        { productId: product.id },
+        `${this.stockHost}/${product.id}/stocks`,
+        // { productId: product.id },
         this.axiosConfig,
       );
 
