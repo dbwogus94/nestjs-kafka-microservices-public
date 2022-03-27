@@ -15,7 +15,7 @@ import { Connection } from 'typeorm';
 
 @Injectable()
 export class ProductService {
-  private readonly logTag = 'AppService';
+  private readonly logTag = 'ProductService';
 
   // TODO: 모듈로 분리
   private readonly axios: AxiosInstance;
@@ -38,14 +38,25 @@ export class ProductService {
   }
 
   async getProducts() {
-    return Product.find();
+    return Product.find({
+      order: {
+        createdAt: 'DESC',
+      },
+    });
   }
 
+  // TODO: 재고 서비스 완료되면 재고까지 한번에 조회하는 서비스 만들기
   async getProduct(productId: number) {
-    return Product.createQueryBuilder('product')
+    const product = await Product.createQueryBuilder('product')
       .innerJoinAndSelect('product.prices', 'productPrice')
       .where('product.id = :productId', { productId })
       .getOne();
+
+    if (!product) {
+      throw new NotFoundException();
+    }
+
+    return product;
   }
 
   async createProduct(createDto: CreateProductDTO) {
@@ -76,10 +87,6 @@ export class ProductService {
   async updateProduct(productId: number, updateDto: UpdateProductDTO) {
     const product = await this.getProduct(productId);
 
-    if (!product) {
-      throw new NotFoundException();
-    }
-
     try {
       const newProduct = Product.create({ ...product, ...updateDto });
       await Product.save(newProduct);
@@ -96,10 +103,6 @@ export class ProductService {
     await queryRunner.startTransaction();
 
     const product = await this.getProduct(productId);
-
-    if (!product) {
-      throw new NotFoundException();
-    }
 
     try {
       await Product.softRemove(product);

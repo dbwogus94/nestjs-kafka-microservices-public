@@ -9,15 +9,21 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   UseInterceptors,
 } from '@nestjs/common';
+import { SenderDTO } from 'src/common/dto/sender.dto';
 import { CreateProductDTO, UpdateProductDTO } from 'src/product/product.dto';
+import { ProductProducer } from './product.producer';
 import { ProductService } from './product.service';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('products')
 export class ProductController {
-  constructor(private readonly productService: ProductService) {}
+  constructor(
+    private readonly productService: ProductService,
+    private readonly productProducer: ProductProducer,
+  ) {}
 
   @Get()
   getProducts() {
@@ -31,24 +37,40 @@ export class ProductController {
 
   @Post()
   @HttpCode(201)
-  createProduct(@Body() createDto: CreateProductDTO) {
-    return this.productService.createProduct(createDto);
+  createProduct(
+    @Query() senderDto: SenderDTO,
+    @Body() createDto: CreateProductDTO,
+  ) {
+    const { sender } = senderDto;
+    return sender === 'gateway'
+      ? this.productService.createProduct(createDto)
+      : this.productProducer.sendCreateProduct(createDto);
   }
 
   @Patch('/:id')
   @HttpCode(201)
   updateProduct(
+    @Query() senderDto: SenderDTO,
     @Param('id', new ParseIntPipe()) productId: number,
     @Body() updateDto: UpdateProductDTO,
   ) {
-    return this.productService.updateProduct(productId, updateDto);
+    const { sender } = senderDto;
+    return sender === 'gateway'
+      ? this.productService.updateProduct(productId, updateDto)
+      : this.productProducer.sendUpdateProduct(productId, updateDto);
   }
 
   @Delete('/:id')
   @HttpCode(204)
   async deleteProduct(
+    @Query() senderDto: SenderDTO,
     @Param('id', new ParseIntPipe()) productId: number,
   ): Promise<void> {
-    await this.productService.deleteProduct(productId);
+    const { sender } = senderDto;
+    if (sender === 'gateway') {
+      await this.productService.deleteProduct(productId);
+    } else {
+      await this.productProducer.sendDeleteProduct(productId);
+    }
   }
 }
