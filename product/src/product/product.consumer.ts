@@ -1,29 +1,29 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { plainToInstance } from 'class-transformer';
-import { AppService } from './app.service';
-import { KafkaConfig } from './config/schema.config';
-import { ConsumerService } from './kafka/consumer.service';
-import { CreateProductDTO, UpdateProductDTO } from './product.dto';
+import { KafkaConfig } from 'src/config/schema.config';
+import { ConsumerService } from 'src/kafka/consumer.service';
+import { CreateProductDTO, UpdateProductDTO } from 'src/product/product.dto';
+import { ProductService } from './product.service';
 
 @Injectable()
 export class ProductConsumer implements OnModuleInit {
   constructor(
     private readonly configService: ConfigService,
     private readonly consumerService: ConsumerService,
-    private readonly appService: AppService,
+    private readonly productService: ProductService,
   ) {}
 
   private async createCunsume(value: string) {
     const { createDto } = JSON.parse(value);
-    await this.appService.createProduct(
+    await this.productService.createProduct(
       plainToInstance(CreateProductDTO, createDto),
     );
   }
 
   private async updateCunsume(value: string) {
     const { productId, updateDto } = JSON.parse(value);
-    await this.appService.updateProduct(
+    await this.productService.updateProduct(
       productId,
       plainToInstance(UpdateProductDTO, updateDto),
     );
@@ -31,7 +31,7 @@ export class ProductConsumer implements OnModuleInit {
 
   private async deleteCunsume(value: string) {
     const { productId } = JSON.parse(value);
-    await this.appService.deleteProduct(productId);
+    await this.productService.deleteProduct(productId);
   }
 
   // TODO: 로직 개선예정

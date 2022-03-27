@@ -1,12 +1,10 @@
-import { HttpModule } from '@nestjs/axios';
-import { Logger, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SchemaConfig } from './config/schema.config';
-import { KafkaModule } from './kafka/kafka.module';
-import { ProductConsumer } from './product.consumer';
+import { ProductModule } from './product/product.module';
 
 @Module({
   imports: [
@@ -24,10 +22,9 @@ import { ProductConsumer } from './product.consumer';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => config.get('database'),
     }),
-    HttpModule,
-    KafkaModule,
+    ProductModule,
   ],
   controllers: [AppController],
-  providers: [AppService, Logger, ProductConsumer],
+  providers: [AppService],
 })
 export class AppModule {}

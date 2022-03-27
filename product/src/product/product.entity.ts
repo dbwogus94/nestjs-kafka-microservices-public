@@ -1,4 +1,4 @@
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import { Timestamp } from 'src/common/entity/timestamp.entity';
 import {
   ArrayMinSize,
@@ -6,9 +6,10 @@ import {
   IsBoolean,
   IsOptional,
   IsString,
+  ValidateNested,
 } from 'class-validator';
 import { Column, Entity, OneToMany } from 'typeorm';
-import { ProductPrice } from 'src/price/price.entity';
+import { ProductPrice } from 'src/product/price/price.entity';
 
 @Entity('product')
 export class Product extends Timestamp {
