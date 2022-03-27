@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { MorganInterceptor, MorganModule } from 'nest-morgan';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SchemaConfig } from './config/schema.config';
@@ -22,9 +24,18 @@ import { ProductModule } from './product/product.module';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => config.get('database'),
     }),
+    MorganModule,
     ProductModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: MorganInterceptor(
+        process.env.NODE_ENV === 'production' ? 'combined' : 'dev',
+      ),
+    },
+  ],
 })
 export class AppModule {}

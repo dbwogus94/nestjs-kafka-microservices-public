@@ -1,29 +1,29 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { plainToInstance } from 'class-transformer';
-import { AppService } from './app.service';
-import { KafkaConfig } from './config/schema.config';
-import { ConsumerService } from './kafka/consumer.service';
+import { KafkaConfig } from '../config/schema.config';
+import { ConsumerService } from '../kafka/consumer.service';
 import { CreateStockDto } from './stock.dto';
+import { StockService } from './stock.service';
 
 @Injectable()
 export class StockConsumer implements OnModuleInit {
   constructor(
     private readonly configService: ConfigService,
     private readonly consumerService: ConsumerService,
-    private readonly appService: AppService,
+    private readonly stockService: StockService,
   ) {}
 
   private async createCunsume(value: string) {
     const { createDto } = JSON.parse(value);
-    await this.appService.createStock(
+    await this.stockService.createStock(
       plainToInstance(CreateStockDto, createDto),
     );
   }
 
   private async deleteCunsume(value: string) {
     const { productId } = JSON.parse(value);
-    await this.appService.deleteStock(productId);
+    await this.stockService.deleteStock(productId);
   }
 
   async onModuleInit() {
