@@ -12,7 +12,7 @@ export class ProductProducer {
     private readonly productService: ProductService,
   ) {}
 
-  private toSendData(data: object) {
+  private toSendData(data: any) {
     return JSON.stringify(data);
   }
 
@@ -27,10 +27,7 @@ export class ProductProducer {
   }
 
   async sendUpdateProduct(productId: number, updateDto: UpdateProductDTO) {
-    const product = await this.productService.getProduct(productId); // 외래키 까지 확인 필요?
-    if (!product) {
-      throw new NotFoundException();
-    }
+    await this.productService.getProduct(productId); // 외래키 까지 확인 필요?
 
     const value: string = this.toSendData({ productId, updateDto });
     await this.producerService.produce({
@@ -40,10 +37,7 @@ export class ProductProducer {
   }
 
   async sendDeleteProduct(productId: number) {
-    const product = await this.productService.getProduct(productId);
-    if (!product) {
-      throw new NotFoundException();
-    }
+    await this.productService.getProduct(productId);
 
     const value: string = this.toSendData({ productId });
     await this.producerService.produce({
