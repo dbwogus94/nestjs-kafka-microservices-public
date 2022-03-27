@@ -13,7 +13,11 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { SenderDTO } from 'src/common/dto/sender.dto';
-import { CreateProductDTO, UpdateProductDTO } from 'src/product/product.dto';
+import {
+  CreateProductDTO,
+  searchOptionDTO,
+  UpdateProductDTO,
+} from 'src/product/product.dto';
 import { ProductProducer } from './product.producer';
 import { ProductService } from './product.service';
 
@@ -31,8 +35,14 @@ export class ProductController {
   }
 
   @Get('/:id')
-  getProduct(@Param('id', new ParseIntPipe()) productId: number) {
-    return this.productService.getProduct(productId);
+  getProduct(
+    @Query() optionDTO: searchOptionDTO,
+    @Param('id', new ParseIntPipe()) productId: number,
+  ) {
+    const { include } = optionDTO;
+    return include === 'stocks'
+      ? this.productService.getProductWithStock(productId)
+      : this.productService.getProduct(productId);
   }
 
   @Post()

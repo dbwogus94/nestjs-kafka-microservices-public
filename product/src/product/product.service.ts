@@ -19,7 +19,7 @@ export class ProductService {
 
   // TODO: 모듈로 분리
   private readonly axios: AxiosInstance;
-  private readonly stockHost = 'http://localhost:3002/stocks';
+  private readonly stockHost = 'http://localhost:3002/products';
   private readonly axiosConfig: AxiosRequestConfig = {
     headers: {
       'Content-Type': 'application/json',
@@ -45,7 +45,26 @@ export class ProductService {
     });
   }
 
-  // TODO: 재고 서비스 완료되면 재고까지 한번에 조회하는 서비스 만들기
+  async getProductWithStock(productId: number) {
+    const product = await this.getProduct(productId);
+
+    try {
+      const { status, data } = await this.axios.get(
+        `${this.stockHost}/${productId}/stocks`,
+        this.axiosConfig,
+      );
+
+      if (status !== 200) {
+        throw new Error('통신 에러!');
+      }
+
+      return { ...product, stock: data };
+    } catch (error) {
+      this.logger.error(error, error.stack, this.logTag);
+      throw new InternalServerErrorException();
+    }
+  }
+
   async getProduct(productId: number) {
     const product = await Product.createQueryBuilder('product')
       .innerJoinAndSelect('product.prices', 'productPrice')
@@ -112,7 +131,7 @@ export class ProductService {
       // 방법 1. 상품코드없이 재고를 조회를 생각하지 않는다.
       // 방법 2. api를 DELETE products/1/stock 으로 만든다. (의미: 상품 1번의 재고를 삭제한다.)
       await this.axios.delete(
-        `${this.stockHost}/${productId}`,
+        `${this.stockHost}/${productId}/stocks`,
         this.axiosConfig,
       );
 
