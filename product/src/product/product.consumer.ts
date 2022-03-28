@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { plainToInstance } from 'class-transformer';
+import { EachMessagePayload } from 'kafkajs';
 import { KafkaConfig } from 'src/config/schema.config';
 import { ConsumerService } from 'src/kafka/consumer.service';
 import { CreateProductDTO, UpdateProductDTO } from 'src/product/product.dto';
@@ -38,13 +39,15 @@ export class ProductConsumer implements OnModuleInit {
   async onModuleInit() {
     const { product } = this.configService.get<KafkaConfig>('kafka');
     const { groupId, topics } = product;
+
     try {
       await this.consumerService.consume(
         { groupId }, //
         topics,
         {
-          // autoCommit: false, => 기본 true
-          eachMessage: async ({ topic, partition, message }) => {
+          autoCommit: false, // => 기본 true
+          eachMessage: async (recode: EachMessagePayload) => {
+            const { topic, message } = recode;
             try {
               switch (topic) {
                 case process.env.PRODUCT_CONSUMER_CREATE_TOPIC:
@@ -60,11 +63,13 @@ export class ProductConsumer implements OnModuleInit {
                   throw new Error(`Not Found Topic(${topic}) Handler`);
               }
             } catch (error) {
-              console.error(error);
-              // throw error;
-              return;
-              // TODO: autoCommit 비활성화시 에러를 던지지 않으면 메세지는 처리한 것으로 취급된다.
+              /* autoCommit을 활성화 하는 경우: 아래 리턴을 사용*/
+              // return;
+              // TODO: 에러를 던지지 않으면 메세지는 처리한 것으로 취급된다.
               // 에러 처리를 어떻게 해야할지 연구가 필요하다.
+            } finally {
+              /* autoCommit을 비활성화 하는 경우: 아래 메서드를 사용한다. */
+              await this.consumerService.commitOffset(groupId, recode);
             }
           },
         },

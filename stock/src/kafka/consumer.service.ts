@@ -11,6 +11,7 @@ import {
   ConsumerConfig,
   ConsumerRunConfig,
   ConsumerSubscribeTopic,
+  EachMessagePayload,
   Kafka,
 } from 'kafkajs';
 import { KafkaConfig } from 'src/config/schema.config';
@@ -30,6 +31,10 @@ export class ConsumerService implements OnApplicationShutdown {
     this.kafka = new Kafka({ brokers });
   }
 
+  private getConsumer(groupId: string): Consumer | undefined {
+    return this.consumerGroups[groupId];
+  }
+
   async consume(
     consumerConfig: ConsumerConfig,
     topics: ConsumerSubscribeTopic[],
@@ -46,6 +51,22 @@ export class ConsumerService implements OnApplicationShutdown {
     }
     const { groupId } = consumerConfig;
     this.consumerGroups[groupId] = consumer;
+  }
+
+  async commitOffset(groupId: string, data: EachMessagePayload) {
+    const { topic, partition, message } = data;
+    try {
+      await this.getConsumer(groupId).commitOffsets([
+        {
+          topic,
+          partition,
+          offset: String(Number.parseInt(message.offset) + 1),
+        },
+      ]);
+    } catch (error) {
+      this.logger.error(error, error.stack, this.logTag);
+      throw error;
+    }
   }
 
   async onApplicationShutdown() {
