@@ -1,4 +1,3 @@
-import { HttpService } from '@nestjs/axios';
 import {
   Inject,
   Injectable,
@@ -8,34 +7,22 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/typeorm';
-import { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { CreateProductDTO, UpdateProductDTO } from 'src/product/product.dto';
 import { Product } from 'src/product/product.entity';
 import { Connection } from 'typeorm';
+import { StockHttpService } from './stock/stock.http.service';
 
 @Injectable()
 export class ProductService {
   private readonly logTag = 'ProductService';
 
-  // TODO: 모듈로 분리
-  private readonly axios: AxiosInstance;
-  private readonly stockHost = 'http://localhost:3002/products';
-  private readonly axiosConfig: AxiosRequestConfig = {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  };
-
   constructor(
     @Inject(Logger)
     private readonly logger: LoggerService,
-    private httpService: HttpService,
     @InjectConnection()
     private readonly connection: Connection,
-  ) {
-    // axiosRef는 순수 axios 인스턴스를 리턴한다.
-    this.axios = this.httpService.axiosRef;
-  }
+    private readonly stockService: StockHttpService,
+  ) {}
 
   async getProducts() {
     return Product.find({
@@ -49,16 +36,8 @@ export class ProductService {
     const product = await this.getProduct(productId);
 
     try {
-      const { status, data } = await this.axios.get(
-        `${this.stockHost}/${productId}/stocks`,
-        this.axiosConfig,
-      );
-
-      if (status !== 200) {
-        throw new Error('통신 에러!');
-      }
-
-      return { ...product, stock: data };
+      const stock = await this.stockService.callGetStock(productId);
+      return { ...product, stock };
     } catch (error) {
       this.logger.error(error, error.stack, this.logTag);
       throw new InternalServerErrorException();
@@ -85,12 +64,8 @@ export class ProductService {
 
     const product = Product.create(createDto);
     try {
-      await Product.save(product);
-      await this.axios.post(
-        `${this.stockHost}/${product.id}/stocks`,
-        // { productId: product.id },
-        this.axiosConfig,
-      );
+      const { id } = await Product.save(product);
+      await this.stockService.callPostStock(id);
 
       await queryRunner.commitTransaction();
     } catch (error) {
@@ -126,14 +101,7 @@ export class ProductService {
     try {
       await Product.softRemove(product);
 
-      // TODO: 재고 서비스에 재고 삭제 요청
-      // => 재고 pk를 알지 못한다 그러면 DELETE 요청에 productId를 어떻게 넘길 수 있을까?
-      // 방법 1. 상품코드없이 재고를 조회를 생각하지 않는다.
-      // 방법 2. api를 DELETE products/1/stock 으로 만든다. (의미: 상품 1번의 재고를 삭제한다.)
-      await this.axios.delete(
-        `${this.stockHost}/${productId}/stocks`,
-        this.axiosConfig,
-      );
+      await this.stockService.callDeleteStock(productId);
 
       await queryRunner.commitTransaction();
     } catch (error) {
