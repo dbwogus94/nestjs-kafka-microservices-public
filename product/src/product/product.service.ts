@@ -7,9 +7,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/typeorm';
+import { plainToInstance } from 'class-transformer';
 import { CreateProductDTO, UpdateProductDTO } from 'src/product/product.dto';
 import { Product } from 'src/product/product.entity';
 import { Connection } from 'typeorm';
+import { GetProductResponse } from './dto/product.response';
 import { StockHttpService } from './stock/stock.http.service';
 
 @Injectable()
@@ -32,12 +34,17 @@ export class ProductService {
     });
   }
 
-  async getProductWithStock(productId: number) {
+  async getProductWithStock(productId: number): Promise<GetProductResponse> {
     const product = await this.getProduct(productId);
 
     try {
       const stock = await this.stockService.callGetStock(productId);
-      return { ...product, stock };
+
+      return plainToInstance(
+        GetProductResponse,
+        { ...product, stock },
+        { excludeExtraneousValues: true },
+      );
     } catch (error) {
       this.logger.error(error, error.stack, this.logTag);
       throw new InternalServerErrorException();
@@ -48,6 +55,7 @@ export class ProductService {
     const product = await Product.createQueryBuilder('product')
       .innerJoinAndSelect('product.prices', 'productPrice')
       .where('product.id = :productId', { productId })
+      .orderBy('productPrice.period', 'ASC')
       .getOne();
 
     if (!product) {
@@ -63,6 +71,7 @@ export class ProductService {
     await queryRunner.startTransaction();
 
     const product = Product.create(createDto);
+    // 가격 정보도 비교
     try {
       const { id } = await Product.save(product);
       await this.stockService.callPostStock(id);
@@ -91,7 +100,7 @@ export class ProductService {
     }
   }
 
-  async deleteProduct(productId: number) {
+  async deleteProduct(productId: number): Promise<void> {
     const queryRunner = this.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();

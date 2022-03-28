@@ -1,8 +1,8 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, Matches } from 'class-validator';
 
 export class SenderDTO {
   @IsOptional()
   @IsString()
-  // 정규식 추가 하자
+  @Matches(/^gateway$/i)
   sender: 'gateway';
 }
