@@ -7,6 +7,9 @@ import {
 } from './config/app-logger.config';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import helmet from 'helmet';
+import { SwaggerConfig } from './config/schema.config';
+import { buildSwagger } from './common/swagger/build-swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -30,8 +33,11 @@ async function bootstrap() {
   );
 
   const config = app.get(ConfigService);
+  const swaggerConfig = config.get<SwaggerConfig>('swagger');
+  buildSwagger('api/stocks', app, swaggerConfig);
 
-  // app.enableCors();
-  await app.listen(config.get('PORT'));
+  app.use(helmet());
+  app.enableCors();
+  await app.listen(config.get('port'));
 }
 bootstrap();

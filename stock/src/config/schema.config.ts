@@ -103,13 +103,19 @@ export class KafkaConfig {
   stock: ConsumerGroupConfig; // 상품 컨슈머 그룹 설정
 }
 
+export class SwaggerConfig {
+  title: string;
+  description: string;
+  version = '1.0';
+}
+
 /**
  * BaseConfig를 상속하는 SchemaConfig 클래스
  */
 export class SchemaConfig extends BaseConfig {
   @IsNumber()
   @IsNotEmpty()
-  readonly port: number = 8080;
+  readonly port: number = 80;
 
   @ValidateNested()
   @IsNotEmpty()
@@ -120,4 +126,9 @@ export class SchemaConfig extends BaseConfig {
   @IsNotEmpty()
   @Type(() => KafkaConfig)
   readonly kafka: KafkaConfig = new KafkaConfig();
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => SwaggerConfig)
+  readonly swagger: SwaggerConfig = new SwaggerConfig();
 }

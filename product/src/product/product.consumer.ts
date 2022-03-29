@@ -4,7 +4,10 @@ import { plainToInstance } from 'class-transformer';
 import { EachMessagePayload } from 'kafkajs';
 import { KafkaConfig } from 'src/config/schema.config';
 import { ConsumerService } from 'src/kafka/consumer.service';
-import { CreateProductDTO, UpdateProductDTO } from 'src/product/product.dto';
+import {
+  CreateProductDTO,
+  UpdateProductDTO,
+} from 'src/product/dto/product.dto';
 import { ProductService } from './product.service';
 
 @Injectable()

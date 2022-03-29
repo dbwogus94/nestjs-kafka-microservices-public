@@ -8,7 +8,10 @@ import {
 } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
-import { CreateProductDTO, UpdateProductDTO } from 'src/product/product.dto';
+import {
+  CreateProductDTO,
+  UpdateProductDTO,
+} from 'src/product/dto/product.dto';
 import { Product } from 'src/product/product.entity';
 import { Connection } from 'typeorm';
 import { GetProductResponse } from './dto/product.response';

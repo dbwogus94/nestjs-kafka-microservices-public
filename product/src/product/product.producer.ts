@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ProducerService } from 'src/kafka/producer.service';
-import { CreateProductDTO, UpdateProductDTO } from './product.dto';
+import { CreateProductDTO, UpdateProductDTO } from './dto/product.dto';
 import { ProductService } from './product.service';
 
 @Injectable()

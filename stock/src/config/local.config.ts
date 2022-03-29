@@ -1,6 +1,8 @@
 import { SchemaConfig } from './schema.config';
 
 export default SchemaConfig.from({
+  port: +process.env.PORT,
+
   database: {
     host: process.env.DATABASE_HOST,
     username: process.env.DATABASE_USER,
@@ -20,5 +22,11 @@ export default SchemaConfig.from({
         { topic: process.env.STOCK_CONSUMER_DELETE_TOPIC },
       ],
     },
+  },
+
+  swagger: {
+    title: process.env.SWAGGER_TITLE,
+    description: process.env.SWAGGER_DESCRIPTION,
+    version: process.env.SWAGGER_VERSION,
   },
 });
