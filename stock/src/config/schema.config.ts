@@ -1,3 +1,4 @@
+import { InfoObject } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
 import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
@@ -5,9 +6,11 @@ import {
   IsBoolean,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   ValidateNested,
 } from 'class-validator';
+import { ConsumerRunConfig, ConsumerSubscribeTopic } from 'kafkajs';
 import { LoggerOptions } from 'typeorm';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { BaseConfig } from './base.config';
@@ -75,7 +78,34 @@ export class DatabaseConfig implements PostgresConnectionOptions {
   logging: LoggerOptions = 'all';
 
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => DatabaseCliConfig)
   cli: DatabaseCliConfig = new DatabaseCliConfig();
+}
+
+export class ConsumerTopicConfig implements ConsumerSubscribeTopic {
+  @IsNotEmpty()
+  @IsString()
+  topic: string | RegExp;
+
+  @IsBoolean()
+  @IsOptional()
+  fromBeginning?: boolean;
+}
+
+export class ConsumerGroupConfig {
+  @IsNotEmpty()
+  @IsString()
+  groupId: string;
+
+  @IsNotEmpty()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => ConsumerTopicConfig)
+  topics: ConsumerTopicConfig[]; // 그룹에 사용할 토픽들 설정
+
+  @IsOptional()
+  consumerRunConfig?: ConsumerRunConfig; // 그룹이 사용할 autoCommit 정책등 설정
 }
 
 export class KafkaConfig {
@@ -83,6 +113,32 @@ export class KafkaConfig {
   @IsArray()
   @ArrayMinSize(1)
   brokers: string[];
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => ConsumerGroupConfig)
+  stock: ConsumerGroupConfig;
+}
+
+export class SwaggerInfo implements InfoObject {
+  @IsNotEmpty()
+  @IsString()
+  title: string;
+
+  @IsNotEmpty()
+  @IsString()
+  description: string;
+
+  @IsNotEmpty()
+  @IsString()
+  version = '1.0';
+}
+
+export class SwaggerConfig {
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => SwaggerInfo)
+  stock: SwaggerInfo;
 }
 
 /**
@@ -91,15 +147,20 @@ export class KafkaConfig {
 export class SchemaConfig extends BaseConfig {
   @IsNumber()
   @IsNotEmpty()
-  readonly port: number = 8080;
+  readonly port: number = 80;
 
-  @ValidateNested()
   @IsNotEmpty()
+  @ValidateNested()
   @Type(() => DatabaseConfig)
-  readonly database: DatabaseConfig = new DatabaseConfig();
+  readonly database: DatabaseConfig;
 
-  @ValidateNested()
   @IsNotEmpty()
+  @ValidateNested()
   @Type(() => KafkaConfig)
-  readonly kafka: KafkaConfig = new KafkaConfig();
+  readonly kafka: KafkaConfig;
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => SwaggerConfig)
+  readonly swagger: SwaggerConfig;
 }
