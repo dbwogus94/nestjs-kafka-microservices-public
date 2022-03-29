@@ -14,7 +14,7 @@ export default SchemaConfig.from({
   },
 
   kafka: {
-    brokers: [process.env.KAFKA_BROKER_1],
+    brokers: [...process.env.KAFKA_BROKERS.split(',')],
     product: {
       groupId: process.env.PRODUCT_CONSUMER_ID,
       topics: [
@@ -26,8 +26,10 @@ export default SchemaConfig.from({
   },
 
   swagger: {
-    title: process.env.SWAGGER_TITLE,
-    description: process.env.SWAGGER_DESCRIPTION,
-    version: process.env.SWAGGER_VERSION,
+    product: {
+      title: process.env.PRODUCT_SWAGGER_TITLE,
+      description: process.env.PRODUCT_SWAGGER_DESCRIPTION,
+      version: process.env.PRODUCT_SWAGGER_VERSION,
+    },
   },
 });

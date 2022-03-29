@@ -1,11 +1,11 @@
 import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { SwaggerInfo } from 'src/config/schema.config';
+import { SwaggerConfig } from 'src/config/schema.config';
 
 export function buildSwagger(
   path: string,
   app: INestApplication,
-  config: SwaggerInfo,
+  config: SwaggerConfig,
   // eslint-disable-next-line @typescript-eslint/ban-types
   modules: Function[] = void 0,
 ): void {

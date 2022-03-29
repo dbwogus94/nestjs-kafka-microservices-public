@@ -33,8 +33,8 @@ async function bootstrap() {
   );
 
   const config = app.get(ConfigService);
-  const swaggerConfig = config.get<SwaggerConfig>('swagger');
-  buildSwagger('api/stocks', app, swaggerConfig);
+  const { stock } = config.get<SwaggerConfig>('swagger');
+  buildSwagger('api/stocks', app, stock);
 
   app.use(helmet());
   app.enableCors();

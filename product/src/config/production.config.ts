@@ -1,6 +1,8 @@
 import { SchemaConfig } from './schema.config';
 
 export default SchemaConfig.from({
+  port: +process.env.PORT,
+
   database: {
     host: process.env.DATABASE_HOST,
     username: process.env.DATABASE_USER,
@@ -12,6 +14,22 @@ export default SchemaConfig.from({
   },
 
   kafka: {
-    brokers: [process.env.KAFKA_BROKER_1],
+    brokers: [...process.env.KAFKA_BROKERS.split(',')],
+    product: {
+      groupId: process.env.PRODUCT_CONSUMER_ID,
+      topics: [
+        { topic: process.env.PRODUCT_CONSUMER_CREATE_TOPIC },
+        { topic: process.env.PRODUCT_CONSUMER_UPDATE_TOPIC },
+        { topic: process.env.PRODUCT_CONSUMER_DELETE_TOPIC },
+      ],
+    },
+  },
+
+  swagger: {
+    product: {
+      title: process.env.PRODUCT_SWAGGER_TITLE,
+      description: process.env.PRODUCT_SWAGGER_DESCRIPTION,
+      version: process.env.PRODUCT_SWAGGER_VERSION,
+    },
   },
 });

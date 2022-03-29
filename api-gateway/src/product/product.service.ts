@@ -5,7 +5,6 @@ import {
   Param,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ClientKafka } from '@nestjs/microservices';
 import { lastValueFrom, timeout } from 'rxjs';
 import { CreateProductDTO, UpdateProductDTO } from './product.dto';
 
@@ -34,57 +33,20 @@ import { CreateProductDTO, UpdateProductDTO } from './product.dto';
 
 @Injectable()
 export class ProductService {
-  constructor(
-    @Inject('PRODUCT_SERVICE')
-    private readonly productClient: ClientKafka,
-  ) {}
+  // constructor() {}
 
-  getProducts() {
-    return this.productClient.send('product_selectAll', '');
-  }
+  getProducts() {}
 
-  async getProduct(@Param('id', ParseIntPipe) productId: number) {
-    // 아래처럼 rxjs를 사용하여 핸들링이 가능하다. 하지만 timeout은 위험할 수 있어 추천하지 않는다.
-    const source = this.productClient
-      .send('product_selectOne', productId)
-      .pipe(timeout(10000));
+  async getProduct(@Param('id', ParseIntPipe) productId: number) {}
 
-    const product = await lastValueFrom(source);
-
-    if (!product) {
-      throw new HttpException(`${productId}번 상품이 없습니다.`, 404);
-    }
-
-    return product;
-  }
-
-  createProduct(createDto: CreateProductDTO) {
-    return this.productClient.send('product_created', createDto);
-  }
+  createProduct(createDto: CreateProductDTO) {}
 
   async updateProduct(
     @Param('id', ParseIntPipe) productId: number,
     updateDto: UpdateProductDTO,
-  ) {
-    const product = this.productClient.send(
-      'product_updated',
-      JSON.stringify({ ...updateDto, id: productId }), // 직열화: 문자열로 변환
-    );
-
-    if (!product) {
-      throw new HttpException(`${productId}번 상품이 없습니다.`, 404);
-    }
-
-    return product;
-  }
+  ) {}
 
   async deleteProduct(
     @Param('id', ParseIntPipe) productId: number,
-  ): Promise<void> {
-    const res = this.productClient.send('product_deleted', productId);
-
-    if (!res) {
-      throw new HttpException(`${productId}번 상품이 없습니다.`, 404);
-    }
-  }
+  ): Promise<void> {}
 }

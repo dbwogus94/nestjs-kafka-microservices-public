@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SchemaConfig } from './config/schema.config';
 import { ProductModule } from './product/product.module';
+import { StockModule } from './stock/stock.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { ProductModule } from './product/product.module';
     }),
     MorganModule,
     ProductModule,
+    StockModule,
   ],
   controllers: [AppController],
   providers: [
