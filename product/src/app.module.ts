@@ -6,10 +6,12 @@ import { MorganInterceptor, MorganModule } from 'nest-morgan';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SchemaConfig } from './config/schema.config';
+import { CustomHttpModule } from './custom-http/custom-http.module';
 import { ProductModule } from './product/product.module';
 
 @Module({
   imports: [
+    MorganModule,
     ConfigModule.forRoot({
       envFilePath:
         process.env.NODE_ENV === 'production'
@@ -24,7 +26,7 @@ import { ProductModule } from './product/product.module';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => config.get('database'),
     }),
-    MorganModule,
+    CustomHttpModule.register(),
     ProductModule,
   ],
   controllers: [AppController],
