@@ -1,52 +1,87 @@
 import {
+  GatewayTimeoutException,
   HttpException,
   Inject,
   Injectable,
-  Param,
-  ParseIntPipe,
+  Logger,
+  LoggerService,
 } from '@nestjs/common';
-import { lastValueFrom, timeout } from 'rxjs';
-import { CreateProductDTO, UpdateProductDTO } from './product.dto';
-
-/* 
-  ## .send() vs .emit()
-
-  ### send() 사용의미
-  - @MessagePattern()에 대응하여 사용한다.
-  - 메세지 패턴은 요청-응답 매커니즘을 사용한다. 
-  - 즉, @MessagePattern()사용하면 응답이 완료까지 무한정으로 대기하게 된다.
-  - nest msa에서는 요청-응답을 구현하기 위해 논리적으로 2개의 채널을 생성해 사용한다.
-  - 2개의 채널을 사용하기 위해 토픽도 2개 생성하여 사용한다. 
-  - 2개의 채널을 사용하기 위해 Consumer Group도 2개를 생성해 사용한다.
-  - send()는 rxjs의 Cold observable을 리턴한다. ( === 유니케스트 )
-  - @MessagePattern()을 사용하기 위해서는 컨트롤러에 onModuleInit() {...}로직을 구해야한다. 
-
-  ### emit() 사용의미
-  - @EventPattern()에 대응하여 사용한다.
-  - 이벤트 패턴은 기본적으로 이벤트 매커니즘을 사용한다.
-  - 즉, @EventPattern()를 사용하면 응답을 기다리지 않고 처리가 가능하다.
-  - nest msa에서는 이벤트 패턴을 구현하기 위해 논리적으로 1개의 채널을 사용한다.
-  - 1개의 채널을 사용하기 때문에 1개의 토픽을 생성한다.
-  - 1개의 채널을 사용하기 때문에 1개의 Consumer Group을 사용한다. (하지만 기본적으로 생성은 2개를 한다.)
-  - emit()는 rxjs의 Hot observable를 리턴한다. === 멀티케스트
-*/
+import { HttpService } from '@nestjs/axios';
+import { AxiosInstance } from 'axios';
+import { CreateProductDTO } from './product.dto';
 
 @Injectable()
-export class ProductService {
-  // constructor() {}
+export class ProductHttpService {
+  private readonly logTag = 'ProductHttpService';
+  private readonly axios: AxiosInstance;
+  private readonly productHost = 'http://localhost:3001/products';
 
-  getProducts() {}
+  constructor(
+    private httpService: HttpService,
+    @Inject(Logger)
+    private readonly logger: LoggerService,
+  ) {
+    this.axios = this.httpService.axiosRef;
+  }
 
-  async getProduct(@Param('id', ParseIntPipe) productId: number) {}
+  // TODO: 가능하면 모듈화 시킬예정
+  private async send(
+    method: 'get' | 'post' | 'patch' | 'delete',
+    url: string,
+    body?: any,
+  ) {
+    if (method !== 'get') {
+      url = url.includes('?')
+        ? `${url}&sender=gateway`
+        : `${url}?sender=gateway`;
+    }
 
-  createProduct(createDto: CreateProductDTO) {}
+    try {
+      const { data } = await this.axios.request({
+        method,
+        url,
+        data: body,
+        headers: { 'Content-Type': 'application/json' },
+      });
 
-  async updateProduct(
-    @Param('id', ParseIntPipe) productId: number,
-    updateDto: UpdateProductDTO,
-  ) {}
+      return data;
+    } catch (error) {
+      if (!error.response) {
+        this.logger.error(error, error.stack, this.logTag);
+        throw new GatewayTimeoutException(
+          '내부 서비스에서 오류가 발생했습니다.',
+        );
+      }
 
-  async deleteProduct(
-    @Param('id', ParseIntPipe) productId: number,
-  ): Promise<void> {}
+      const { status } = error.response;
+      if (!status && status >= 400 && status <= 499) {
+        throw new HttpException(void 0, error.response.status);
+        // TODO: 예외 필터 || 인터셉터로 처리 필요
+      }
+    }
+  }
+
+  async callGetProducts() {
+    return this.send('get', `${this.productHost}`);
+  }
+
+  async callGetProduct(productId: number, include?: 'stocks') {
+    const url = include
+      ? `${this.productHost}/${productId}?include=${include}`
+      : `${this.productHost}/${productId}`;
+    // TODO: include 배열로 수정
+    return this.send('get', url);
+  }
+
+  async callPostProduct(body: CreateProductDTO) {
+    return this.send('post', `${this.productHost}`, body);
+  }
+
+  // async callPatchProduct(productId: number) {
+  //   return this.send('patch', `${this.productHost}/${productId}`);
+  // }
+
+  // async callDeleteProduct(productId: number) {
+  //   return this.send('delete', `${this.productHost}/${productId}`);
+  // }
 }

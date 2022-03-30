@@ -6,6 +6,12 @@ import {
   developmentConfig,
   productionConfig,
 } from './config/app-logger.config';
+import { SwaggerConfig } from './config/schema.config';
+import { ConfigService } from '@nestjs/config';
+import { buildSwagger } from './common/swagger/build-swagger';
+import helmet from 'helmet';
+import { ProductModule } from './product/product.module';
+import { StockModule } from './stock/stock.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -27,7 +33,14 @@ async function bootstrap() {
       }, // 이부분은 app에 요청이 왔다갔다 하는 부분에만 적용
     }),
   );
+
+  const config = app.get(ConfigService);
+  const { product, stock } = config.get<SwaggerConfig>('swagger');
+  buildSwagger('api/products', app, product, [ProductModule]);
+  buildSwagger('api/stocks', app, stock, [StockModule]);
+
+  app.use(helmet());
   app.enableCors();
-  await app.listen(3000);
+  await app.listen(config.get('port'));
 }
 bootstrap();
