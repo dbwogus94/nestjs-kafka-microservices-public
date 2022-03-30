@@ -35,7 +35,8 @@ async function bootstrap() {
   );
 
   const config = app.get(ConfigService);
-  const { product, stock } = config.get<SwaggerConfig>('swagger');
+  const { apis, product, stock } = config.get<SwaggerConfig>('swagger');
+  buildSwagger('api/', app, apis, [ProductModule, StockModule]);
   buildSwagger('api/products', app, product, [ProductModule]);
   buildSwagger('api/stocks', app, stock, [StockModule]);
 

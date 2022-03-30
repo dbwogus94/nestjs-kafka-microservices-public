@@ -14,6 +14,12 @@ export default SchemaConfig.from({
   },
 
   swagger: {
+    apis: {
+      title: process.env.APIS_SWAGGER_TITLE,
+      description: process.env.APIS_SWAGGER_DESCRIPTION,
+      version: process.env.APIS_SWAGGER_VERSION,
+    },
+
     product: {
       title: process.env.PRODUCT_SWAGGER_TITLE,
       description: process.env.PRODUCT_SWAGGER_DESCRIPTION,

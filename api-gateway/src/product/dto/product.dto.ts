@@ -1,5 +1,6 @@
-import { Expose, Type } from 'class-transformer';
+import { Exclude, Expose, Type } from 'class-transformer';
 import {
+  ApiHideProperty,
   ApiProperty,
   ApiPropertyOptional,
   OmitType,
@@ -16,53 +17,10 @@ import {
   Matches,
   ValidateNested,
 } from 'class-validator';
+import { Timestamp } from 'src/common/entity/timestamp.entity';
+import { StockDto } from 'src/stock/dto/stock.dto';
 
-class StockDto {
-  @ApiProperty({ description: '재고 ID', readOnly: true })
-  @Expose()
-  @IsNumber()
-  @Type(() => Number)
-  id: number;
-
-  @Expose()
-  @IsString()
-  createdAt: string;
-
-  @Expose()
-  @IsString()
-  updatedAt: string;
-
-  @ApiProperty({ description: '일반 재고', readOnly: true })
-  @Expose()
-  @IsNumber()
-  @Type(() => Number)
-  normal: number;
-
-  @ApiProperty({ description: '케어 재고', readOnly: true })
-  @Expose()
-  @IsNumber()
-  @Type(() => Number)
-  care: number;
-
-  @ApiProperty({ description: '수리 재고', readOnly: true })
-  @Expose()
-  @IsNumber()
-  @Type(() => Number)
-  repair: number;
-
-  @ApiProperty({ description: '폐기 재고', readOnly: true })
-  @Expose()
-  @IsNumber()
-  @Type(() => Number)
-  waste: number;
-}
-
-class ProductPriceDTO {
-  // @ApiProperty({ description: 'ID' })
-  @IsOptional()
-  @IsNumber()
-  id?: number;
-
+class ProductPriceDTO extends Timestamp {
   @ApiProperty({ description: '기간' })
   @IsNumber()
   period: number;
@@ -85,9 +43,9 @@ export class ProductDTO {
   @ApiProperty({ description: '수정일', readOnly: true })
   updatedAt: Date;
 
-  // @ApiHideProperty()
-  // @Exclude()
-  // deletedAt: Date;
+  @ApiHideProperty()
+  @Exclude()
+  deletedAt: Date;
 
   @ApiProperty({ description: '섬네일' })
   @Expose()

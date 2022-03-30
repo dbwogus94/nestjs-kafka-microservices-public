@@ -98,6 +98,11 @@ export class SwaggerConfig {
   @IsNotEmpty()
   @ValidateNested()
   @Type(() => SwaggerInfo)
+  apis: SwaggerInfo;
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => SwaggerInfo)
   product: SwaggerInfo;
 
   @IsNotEmpty()
