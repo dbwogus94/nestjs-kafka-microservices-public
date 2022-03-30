@@ -78,6 +78,45 @@ export class DatabaseConfig implements PostgresConnectionOptions {
   @ValidateNested()
   @Type(() => DatabaseCliConfig)
   cli: DatabaseCliConfig = new DatabaseCliConfig();
+
+  // @IsNotEmpty()
+  // namingStrategy: CustomNamingStrategy = new CustomNamingStrategy();
+}
+
+export class JwtInfo {
+  @IsNotEmpty()
+  @IsString()
+  secret: string;
+
+  @IsNotEmpty()
+  @IsString()
+  expiration: string;
+}
+
+export class JwtConfig {
+  @IsNotEmpty()
+  @IsString()
+  issuer: string;
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => JwtInfo)
+  access: JwtInfo;
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => JwtInfo)
+  refresh: JwtInfo;
+}
+
+export class ServiceHost {
+  @IsNotEmpty()
+  @IsString()
+  productHost: string;
+
+  @IsNotEmpty()
+  @IsString()
+  stockHost: string;
 }
 
 export class SwaggerInfo implements InfoObject {
@@ -92,16 +131,6 @@ export class SwaggerInfo implements InfoObject {
   @IsNotEmpty()
   @IsString()
   version = '1.0';
-}
-
-export class ServiceHost {
-  @IsNotEmpty()
-  @IsString()
-  productHost: string;
-
-  @IsNotEmpty()
-  @IsString()
-  stockHost: string;
 }
 
 export class SwaggerConfig {
@@ -119,6 +148,11 @@ export class SwaggerConfig {
   @ValidateNested()
   @Type(() => SwaggerInfo)
   stock: SwaggerInfo;
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => SwaggerInfo)
+  auth: SwaggerInfo;
 }
 
 /**
@@ -133,6 +167,11 @@ export class SchemaConfig extends BaseConfig {
   @ValidateNested()
   @Type(() => DatabaseConfig)
   readonly database: DatabaseConfig;
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => JwtConfig)
+  readonly jwt: JwtConfig;
 
   @IsNotEmpty()
   @ValidateNested()
