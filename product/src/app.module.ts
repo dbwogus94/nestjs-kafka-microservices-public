@@ -7,6 +7,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SchemaConfig } from './config/schema.config';
 import { CustomHttpModule } from './custom-http/custom-http.module';
+import { KafkaModule } from './kafka/kafka.module';
 import { ProductModule } from './product/product.module';
 
 @Module({
@@ -27,6 +28,7 @@ import { ProductModule } from './product/product.module';
       useFactory: (config: ConfigService) => config.get('database'),
     }),
     CustomHttpModule.register(),
+    KafkaModule.register(),
     ProductModule,
   ],
   controllers: [AppController],
