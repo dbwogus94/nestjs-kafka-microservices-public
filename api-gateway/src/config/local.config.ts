@@ -13,6 +13,11 @@ export default SchemaConfig.from({
     synchronize: false,
   },
 
+  serviceHost: {
+    productHost: process.env.PRODUCT_HOST,
+    stockHost: process.env.STOCK_HOST,
+  },
+
   swagger: {
     apis: {
       title: process.env.APIS_SWAGGER_TITLE,

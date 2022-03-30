@@ -94,6 +94,16 @@ export class SwaggerInfo implements InfoObject {
   version = '1.0';
 }
 
+export class ServiceHost {
+  @IsNotEmpty()
+  @IsString()
+  productHost: string;
+
+  @IsNotEmpty()
+  @IsString()
+  stockHost: string;
+}
+
 export class SwaggerConfig {
   @IsNotEmpty()
   @ValidateNested()
@@ -123,6 +133,11 @@ export class SchemaConfig extends BaseConfig {
   @ValidateNested()
   @Type(() => DatabaseConfig)
   readonly database: DatabaseConfig;
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => ServiceHost)
+  readonly serviceHost: ServiceHost;
 
   @IsNotEmpty()
   @ValidateNested()

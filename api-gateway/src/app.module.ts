@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { SchemaConfig } from './config/schema.config';
 import { ProductModule } from './product/product.module';
 import { StockModule } from './stock/stock.module';
+import { CustomHttpModule } from './custom-http/custom-http.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { StockModule } from './stock/stock.module';
       isGlobal: true,
       load: [() => SchemaConfig.get()],
     }),
+    CustomHttpModule.register(),
     MorganModule,
     ProductModule,
     StockModule,
