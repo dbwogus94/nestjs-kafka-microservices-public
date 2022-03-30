@@ -6,6 +6,7 @@ import { MorganInterceptor, MorganModule } from 'nest-morgan';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SchemaConfig } from './config/schema.config';
+import { KafkaModule } from './kafka/kafka.module';
 import { StockModule } from './stock/stock.module';
 
 @Module({
@@ -24,6 +25,7 @@ import { StockModule } from './stock/stock.module';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => config.get('database'),
     }),
+    KafkaModule.register(),
     MorganModule,
     StockModule,
   ],

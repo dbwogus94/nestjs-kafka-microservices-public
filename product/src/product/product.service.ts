@@ -38,9 +38,8 @@ export class ProductService {
   }
 
   async getProductWithStock(productId: number): Promise<GetProductResponse> {
-    const product = await this.getProduct(productId);
-
     try {
+      const product = await this.getProduct(productId);
       const stock = await this.stockService.callGetStock(productId);
 
       return plainToInstance(
@@ -50,7 +49,7 @@ export class ProductService {
       );
     } catch (error) {
       this.logger.error(error, error.stack, this.logTag);
-      throw new InternalServerErrorException();
+      throw error;
     }
   }
 

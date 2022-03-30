@@ -5,7 +5,7 @@ export const responseMessage = {
 };
 
 export const errorMessage = {
-  notFound: '요청한 상품이 가진 재고가 없습니다.',
+  notFound: '요청한 상품 또는 재고가 없습니다.',
   badRequest: '요청이 유효성 검사를 통과하지 못하였습니다.',
   gatewayTimeout: '내부 서비스에서 오류가 발생했습니다.',
 };

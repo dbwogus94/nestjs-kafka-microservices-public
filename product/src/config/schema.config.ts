@@ -122,6 +122,12 @@ export class KafkaConfig {
   product: ConsumerGroupConfig;
 }
 
+export class ServiceHost {
+  @IsNotEmpty()
+  @IsString()
+  stockHost: string;
+}
+
 export class SwaggerInfo implements InfoObject {
   @IsNotEmpty()
   @IsString()
@@ -160,6 +166,11 @@ export class SchemaConfig extends BaseConfig {
   @ValidateNested()
   @Type(() => KafkaConfig)
   readonly kafka: KafkaConfig;
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => ServiceHost)
+  readonly serviceHost: ServiceHost;
 
   @IsNotEmpty()
   @ValidateNested()
