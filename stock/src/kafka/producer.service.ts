@@ -7,24 +7,20 @@ import {
   OnApplicationShutdown,
   OnModuleInit,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Kafka, Producer, ProducerRecord } from 'kafkajs';
-import { KafkaConfig } from 'src/config/schema.config';
+import { Producer, ProducerRecord } from 'kafkajs';
+import { KafkaService } from './kafka.service';
 
 @Injectable()
 export class ProducerService implements OnModuleInit, OnApplicationShutdown {
   private readonly logTag = 'ProducerServices';
-  private readonly kafka: Kafka;
   private readonly producer: Producer;
 
   constructor(
-    private configService: ConfigService,
     @Inject(Logger)
     private readonly logger: LoggerService,
+    private kafkaService: KafkaService,
   ) {
-    const { brokers } = this.configService.get<KafkaConfig>('kafka');
-    this.kafka = new Kafka({ brokers });
-    this.producer = this.kafka.producer();
+    this.producer = this.kafkaService.getClient().producer();
   }
 
   // nest lifecycle event

@@ -5,31 +5,25 @@ import {
   LoggerService,
   OnApplicationShutdown,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import {
   Consumer,
   ConsumerConfig,
   ConsumerRunConfig,
   ConsumerSubscribeTopic,
   EachMessagePayload,
-  Kafka,
 } from 'kafkajs';
-import { KafkaConfig } from 'src/config/schema.config';
+import { KafkaService } from './kafka.service';
 
 @Injectable()
 export class ConsumerService implements OnApplicationShutdown {
   private readonly logTag = 'ConsumerService';
-  private readonly kafka: Kafka;
   private readonly consumerGroups: { [k in string]: Consumer } = {};
 
   constructor(
-    private readonly configService: ConfigService,
     @Inject(Logger)
     private readonly logger: LoggerService,
-  ) {
-    const { brokers } = this.configService.get<KafkaConfig>('kafka');
-    this.kafka = new Kafka({ brokers });
-  }
+    private kafkaService: KafkaService,
+  ) {}
 
   private getConsumer(groupId: string): Consumer | undefined {
     return this.consumerGroups[groupId];
@@ -40,7 +34,7 @@ export class ConsumerService implements OnApplicationShutdown {
     topics: ConsumerSubscribeTopic[],
     consumerRunConfig: ConsumerRunConfig,
   ) {
-    const consumer = this.kafka.consumer(consumerConfig);
+    const consumer = this.kafkaService.getClient().consumer(consumerConfig);
     try {
       // 컨슈머 그룹당 하나의 연결만 가능하다. => 여러개 선언시? 에러는 나지 않지만 토픽에 컨슈머 그룹이 할당되지 못한다.
       await consumer.connect();

@@ -15,21 +15,18 @@ import {
   Kafka,
 } from 'kafkajs';
 import { KafkaConfig } from 'src/config/schema.config';
+import { KafkaService } from './kafka.service';
 
 @Injectable()
 export class ConsumerService implements OnApplicationShutdown {
   private readonly logTag = 'ConsumerService';
-  private readonly kafka: Kafka;
   private readonly consumerGroups: { [k in string]: Consumer } = {};
 
   constructor(
-    private configService: ConfigService,
     @Inject(Logger)
     private readonly logger: LoggerService,
-  ) {
-    const { brokers } = this.configService.get<KafkaConfig>('kafka');
-    this.kafka = new Kafka({ brokers });
-  }
+    private kafkaService: KafkaService,
+  ) {}
 
   private getConsumer(groupId: string): Consumer | undefined {
     return this.consumerGroups[groupId];
@@ -40,7 +37,7 @@ export class ConsumerService implements OnApplicationShutdown {
     topics: ConsumerSubscribeTopic[],
     consumerRunConfig: ConsumerRunConfig,
   ) {
-    const consumer = this.kafka.consumer(consumerConfig);
+    const consumer = this.kafkaService.getClient().consumer(consumerConfig);
     try {
       await consumer.connect();
       await Promise.all(topics.map(async (topic) => consumer.subscribe(topic)));
