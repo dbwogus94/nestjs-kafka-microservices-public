@@ -5,7 +5,6 @@ dist
 node_modules
 
 # my
-auth
 billing
 *.env
 env

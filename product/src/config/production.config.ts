@@ -25,6 +25,10 @@ export default SchemaConfig.from({
     },
   },
 
+  serviceHost: {
+    stockHost: process.env.STOCK_HOST,
+  },
+
   swagger: {
     product: {
       title: process.env.PRODUCT_SWAGGER_TITLE,
