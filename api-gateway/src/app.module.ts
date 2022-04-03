@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { MorganInterceptor, MorganModule } from 'nest-morgan';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -8,6 +9,7 @@ import { SchemaConfig } from './config/schema.config';
 import { ProductModule } from './product/product.module';
 import { StockModule } from './stock/stock.module';
 import { CustomHttpModule } from './custom-http/custom-http.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -19,10 +21,16 @@ import { CustomHttpModule } from './custom-http/custom-http.module';
       isGlobal: true,
       load: [() => SchemaConfig.get()],
     }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => config.get('database'),
+    }),
     CustomHttpModule.register(),
     MorganModule,
     ProductModule,
     StockModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [

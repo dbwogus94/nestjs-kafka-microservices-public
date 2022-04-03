@@ -8,6 +8,7 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
+import { CookieOptions } from 'express';
 import { LoggerOptions } from 'typeorm';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { BaseConfig } from './base.config';
@@ -90,7 +91,7 @@ export class JwtInfo {
 
   @IsNotEmpty()
   @IsString()
-  expiration: string;
+  expiresIn: string;
 }
 
 export class JwtConfig {
@@ -107,6 +108,57 @@ export class JwtConfig {
   @ValidateNested()
   @Type(() => JwtInfo)
   refresh: JwtInfo;
+}
+
+export class CookieOption implements CookieOptions {
+  @IsNotEmpty()
+  @IsNumber()
+  @Type(() => Number)
+  maxAge: number; // 만료일, 단위 ms(밀리세컨드)
+
+  @IsBoolean()
+  signed?: boolean; // 암호화 옵션
+
+  @IsBoolean()
+  httpOnly?: boolean;
+
+  @IsString()
+  domain?: string; // 적용할 도메인
+
+  @IsString()
+  path?: string; // 적용할 도메인 path
+
+  @IsBoolean()
+  secure?: boolean; // https에서만 사용 옵션
+
+  @IsNotEmpty()
+  sameSite: boolean | 'lax' | 'strict' | 'none' = 'lax';
+  /* "strict" : 서로 다른 도메인에서 아예 전송 불가능. 보안성은 높으나 편의가 낮다.
+   * "lax" : 서로 다른 도메인이지만 일부 예외( HTTP get method / a href / link href )에서는 전송 가능.
+   * "none" : 모든 도메인에서 전송 가능 + https 환경 필수
+   */
+}
+
+export class CookieInfo {
+  @IsNotEmpty()
+  @IsString()
+  key: string;
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => CookieOption)
+  options: CookieOption;
+}
+
+export class CookieConfig {
+  @IsNotEmpty()
+  @IsString()
+  secret: string;
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => CookieInfo)
+  jwtCookieConfig: CookieInfo;
 }
 
 export class ServiceHost {
@@ -159,9 +211,13 @@ export class SwaggerConfig {
  * BaseConfig를 상속하는 SchemaConfig 클래스
  */
 export class SchemaConfig extends BaseConfig {
-  @IsNumber()
   @IsNotEmpty()
+  @IsNumber()
   readonly port: number = 80;
+
+  @IsNotEmpty()
+  @IsNumber()
+  readonly salt: number;
 
   @IsNotEmpty()
   @ValidateNested()
@@ -172,6 +228,11 @@ export class SchemaConfig extends BaseConfig {
   @ValidateNested()
   @Type(() => JwtConfig)
   readonly jwt: JwtConfig;
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => CookieConfig)
+  readonly cookie: CookieConfig;
 
   @IsNotEmpty()
   @ValidateNested()
