@@ -2,6 +2,7 @@ export const responseMessage = {
   signup: '회원 가입 요청이 성공적으로 처리되었습니다.',
   signin: '로그인 요청이 성공적으로 처리되었습니다.',
   me: 'JWT가 유효합니다.',
+  refresh: '토큰 재발급 요청이 성공적으로 처리되었습니다.',
   logout: '로그아웃 요청이 성공적으로 처리되었습니다.',
 };
 

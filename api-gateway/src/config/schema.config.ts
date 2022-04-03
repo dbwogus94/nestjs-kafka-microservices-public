@@ -158,7 +158,12 @@ export class CookieConfig {
   @IsNotEmpty()
   @ValidateNested()
   @Type(() => CookieInfo)
-  jwtCookieConfig: CookieInfo;
+  accessCookie: CookieInfo;
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => CookieInfo)
+  refreshCookie: CookieInfo;
 }
 
 export class ServiceHost {
