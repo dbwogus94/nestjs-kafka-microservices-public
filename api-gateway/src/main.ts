@@ -1,17 +1,19 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { WinstonModule } from 'nest-winston';
+import * as cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import {
   developmentConfig,
   productionConfig,
 } from './config/app-logger.config';
-import { SwaggerConfig } from './config/schema.config';
-import { ConfigService } from '@nestjs/config';
+import { CookieConfig, SwaggerConfig } from './config/schema.config';
 import { buildSwagger } from './common/swagger/build-swagger';
-import helmet from 'helmet';
 import { ProductModule } from './product/product.module';
 import { StockModule } from './stock/stock.module';
+import { AuthModule } from './auth/auth.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -36,10 +38,13 @@ async function bootstrap() {
 
   const config = app.get(ConfigService);
   const { apis, product, stock } = config.get<SwaggerConfig>('swagger');
-  buildSwagger('api/', app, apis, [ProductModule, StockModule]);
+  buildSwagger('api/', app, apis, [ProductModule, StockModule, AuthModule]);
+  buildSwagger('api/auth', app, apis, [AuthModule]);
   buildSwagger('api/products', app, product, [ProductModule]);
   buildSwagger('api/stocks', app, stock, [StockModule]);
 
+  const { secret } = config.get<CookieConfig>('cookie');
+  app.use(cookieParser(secret));
   app.use(helmet());
   app.enableCors();
   await app.listen(config.get('port'));
