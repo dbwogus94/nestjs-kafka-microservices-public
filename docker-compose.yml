@@ -1,0 +1,109 @@
+version: '3.8'
+services:
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    restart: 'no'
+    ports:
+      - '9000:9000'
+    environment:
+      KAFKA_BROKERCONNECT: 'kafka:29092'
+      JVM_OPTS: '-Xms16M -Xmx48M -Xss180K -XX:-TieredCompilation -XX:+UseStringDeduplication -noverify'
+    depends_on:
+      - 'kafka'
+    networks:
+      - backend
+
+  kafka:
+    image: obsidiandynamics/kafka
+    restart: 'no'
+    ports:
+      - '2181:2181'
+      - '9092:9092'
+    env_file: ./infra/kafka/.env
+    volumes:
+      - ./infra/kafka/data:/var/lib/kafka/data
+    networks:
+      - backend
+
+  postgresql:
+    image: postgres:11.4
+    env_file: ./infra/pg/.env
+    volumes:
+      - ./infra/pg/data:/var/lib/postgresql/data
+      - ./infra/pg/init-pg.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - 5432:5432
+    networks:
+      - backend
+
+  api-gateway:
+    container_name: api-gateway
+    build:
+      context: ./api-gateway
+    expose:
+      - '3000'
+
+    env_file: ./api-gateway/env/production.env
+    environment:
+      - TZ=Asia/Seoul
+    volumes:
+      # (필수) 컨테이너에서 모듈과 빌드된 파일을 사용할 수 있도록 알려야함.
+      - ./api-gateway:/usr/app
+      - /usr/app/node_modules
+      - /usr/app/dist
+      - ./api-gateway/logs:/usr/app/logs
+    depends_on:
+      - kafka
+      - postgresql
+    stdin_open: true
+    tty: true
+    networks:
+      - backend
+
+  product:
+    container_name: product
+    build:
+      context: ./product
+    expose:
+      - '3001'
+    env_file: ./product/env/production.env
+    environment:
+      - TZ=Asia/Seoul
+    volumes:
+      - ./product:/usr/app
+      - /usr/app/node_modules
+      - /usr/app/dist
+      - ./product/logs:/usr/app/logs
+    depends_on:
+      - kafka
+      - postgresql
+    stdin_open: true
+    tty: true
+    networks:
+      - backend
+
+  stock:
+    container_name: stock
+    build:
+      context: ./stock
+    expose:
+      - '3002'
+    env_file: ./stock/env/production.env
+    environment:
+      - TZ=Asia/Seoul
+    volumes:
+      - ./stock:/usr/app
+      - /usr/app/node_modules
+      - /usr/app/dist
+      - ./stock/logs:/usr/app/logs
+    depends_on:
+      - kafka
+      - postgresql
+    stdin_open: true
+    tty: true
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
