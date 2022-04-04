@@ -13,7 +13,7 @@ import { CookieConfig, SwaggerConfig } from './config/schema.config';
 import { buildSwagger } from './common/swagger/build-swagger';
 import { ProductModule } from './product/product.module';
 import { StockModule } from './stock/stock.module';
-import { AuthModule } from './auth/auth.module';
+import { AuthV2Module } from './auth-v2/auth.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -38,8 +38,8 @@ async function bootstrap() {
 
   const config = app.get(ConfigService);
   const { apis, product, stock } = config.get<SwaggerConfig>('swagger');
-  buildSwagger('api/', app, apis, [ProductModule, StockModule, AuthModule]);
-  buildSwagger('api/auth', app, apis, [AuthModule]);
+  buildSwagger('api/', app, apis, [ProductModule, StockModule, AuthV2Module]);
+  buildSwagger('api/auth-v2', app, apis, [AuthV2Module]);
   buildSwagger('api/products', app, product, [ProductModule]);
   buildSwagger('api/stocks', app, stock, [StockModule]);
 

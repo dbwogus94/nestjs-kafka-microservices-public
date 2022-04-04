@@ -19,4 +19,4 @@ import { UserService } from './user/user.service';
   ],
   controllers: [AuthController],
 })
-export class AuthModule {}
+export class AuthV2Module {}
