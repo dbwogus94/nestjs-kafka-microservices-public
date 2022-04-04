@@ -42,14 +42,14 @@ export class AuthController {
   ) {}
 
   private setCookie(res: Response, val: string) {
-    const { jwtCookieConfig } = this.configService.get<CookieConfig>('cookie');
-    const { key, options } = jwtCookieConfig;
+    const { accessCookie } = this.configService.get<CookieConfig>('cookie');
+    const { key, options } = accessCookie;
     res.cookie(key, val, options);
   }
 
   private crearCookie(res: Response) {
-    const { jwtCookieConfig } = this.configService.get<CookieConfig>('cookie');
-    const { key } = jwtCookieConfig;
+    const { accessCookie } = this.configService.get<CookieConfig>('cookie');
+    const { key } = accessCookie;
     res.clearCookie(key);
   }
 

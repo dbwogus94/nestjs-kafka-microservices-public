@@ -29,7 +29,7 @@ export default SchemaConfig.from({
 
   cookie: {
     secret: process.env.COOKIE_SECRET,
-    jwtCookieConfig: {
+    accessCookie: {
       key: process.env.COOKIE_KEY,
       options: {
         domain: process.env.COOKIE_DOMAIN,

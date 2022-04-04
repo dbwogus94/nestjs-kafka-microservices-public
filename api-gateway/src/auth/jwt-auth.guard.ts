@@ -32,8 +32,8 @@ export class JwtAuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req: Request = context.switchToHttp().getRequest();
     const res: Response = context.switchToHttp().getResponse();
-    const { jwtCookieConfig } = this.configService.get<CookieConfig>('cookie');
-    const { key, options } = jwtCookieConfig;
+    const { accessCookie } = this.configService.get<CookieConfig>('cookie');
+    const { key, options } = accessCookie;
 
     let userId: string | number;
     try {
