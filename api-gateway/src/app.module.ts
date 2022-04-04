@@ -10,6 +10,7 @@ import { ProductModule } from './product/product.module';
 import { StockModule } from './stock/stock.module';
 import { CustomHttpModule } from './custom-http/custom-http.module';
 import { AuthModule } from './auth/auth.module';
+import { AuthV2Module } from './auth-v2/auth.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { AuthModule } from './auth/auth.module';
     ProductModule,
     StockModule,
     AuthModule,
+    AuthV2Module,
   ],
   controllers: [AppController],
   providers: [

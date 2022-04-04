@@ -158,7 +158,17 @@ export class CookieConfig {
   @IsNotEmpty()
   @ValidateNested()
   @Type(() => CookieInfo)
-  accessCookie: CookieInfo;
+  jwtCookieConfig: CookieInfo; // AuthModule에서 사용
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => CookieInfo)
+  accessCookie: CookieInfo; // AuthV2Module에서 사용
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => CookieInfo)
+  refreshCookie: CookieInfo; // AuthV2Module에서 사용
 }
 
 export class ServiceHost {

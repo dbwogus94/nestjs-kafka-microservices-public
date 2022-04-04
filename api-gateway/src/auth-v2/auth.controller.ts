@@ -26,14 +26,15 @@ import { Request, Response } from 'express';
 import { CookieConfig } from 'src/config/schema.config';
 import { AuthService } from './auth.service';
 import { SigninDto, SignupDto } from './dto/auth.dto';
-import { JwtAuthGuard } from './jwt-auth.guard';
-import { LocalAuthGuard } from './local-auth.guard';
+import { JwtAccessGuard } from './guard/jwt-access.guard';
+import JwtRefreshGuard from './guard/jwt-refresh.guard';
+import { LocalAuthGuard } from './guard/local-auth.guard';
 import { errorMessage, responseMessage } from './response-message';
 import { User } from './user/user.entity';
 
 @UseInterceptors(ClassSerializerInterceptor)
-@Controller('/auth')
-@ApiTags('SCM 인증 API')
+@Controller('/auth-v2')
+@ApiTags('SCM 인증 API V2')
 @ApiBadRequestResponse({ description: errorMessage.badRequest })
 export class AuthController {
   constructor(
@@ -41,15 +42,21 @@ export class AuthController {
     private readonly authService: AuthService,
   ) {}
 
-  private setCookie(res: Response, val: string) {
-    const { jwtCookieConfig } = this.configService.get<CookieConfig>('cookie');
-    const { key, options } = jwtCookieConfig;
+  private setCookie(
+    res: Response,
+    val: string,
+    type: 'accessCookie' | 'refreshCookie',
+  ) {
+    const { key, options } =
+      this.configService.get<CookieConfig>('cookie')[type];
     res.cookie(key, val, options);
   }
 
   private crearCookie(res: Response) {
-    const { jwtCookieConfig } = this.configService.get<CookieConfig>('cookie');
-    res.clearCookie(jwtCookieConfig.key);
+    const { accessCookie, refreshCookie } =
+      this.configService.get<CookieConfig>('cookie');
+    res.clearCookie(accessCookie.key);
+    res.clearCookie(refreshCookie.key);
   }
 
   @Post('/signup')
@@ -73,23 +80,41 @@ export class AuthController {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     @Body() signinDto: SigninDto,
   ): Promise<any> {
-    const { id, accessToken } = await this.authService.signin(req.user);
-    this.setCookie(res, `${accessToken} ${id}`);
+    const { id, accessToken, refreshToken } = await this.authService.signin(
+      req.user,
+    );
+    this.setCookie(res, accessToken, 'accessCookie');
+    this.setCookie(res, refreshToken, 'refreshCookie');
     return { id };
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAccessGuard)
   @Get('/me')
   @ApiCookieAuth()
-  @ApiOperation({ summary: '토큰 확인' })
+  @ApiOperation({ summary: '토큰 확인 요청' })
   @ApiOkResponse({ description: responseMessage.me })
   @ApiUnauthorizedResponse({ description: errorMessage.unauthorized })
-  me(@Req() req: Response & { user: User }): object {
+  me(@Req() req: Response & { user: User }) {
     const { id } = req.user;
     return { id };
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtRefreshGuard)
+  @Get('/refresh')
+  @HttpCode(204)
+  @ApiCookieAuth()
+  @ApiOperation({ summary: '엑세스 토큰 재발급 요청' })
+  @ApiNoContentResponse({ description: responseMessage.refresh })
+  @ApiUnauthorizedResponse({ description: errorMessage.unauthorized })
+  async refresh(
+    @Req() req: Request & { user: User },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const accessToken = await this.authService.refresh(req.user);
+    this.setCookie(res, accessToken, 'accessCookie');
+  }
+
+  @UseGuards(JwtAccessGuard)
   @Get('/logout')
   @HttpCode(204)
   @ApiCookieAuth()
@@ -99,7 +124,7 @@ export class AuthController {
   async logout(
     @Req() req: Response & { user: User },
     @Res({ passthrough: true }) res: Response,
-  ): Promise<void> {
+  ) {
     const { id } = req.user;
     await this.authService.logout(id);
     this.crearCookie(res);

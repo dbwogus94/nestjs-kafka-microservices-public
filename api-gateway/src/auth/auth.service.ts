@@ -127,6 +127,7 @@ export class AuthService {
     }
 
     const newAccessToken = this.issueAccessToken({ id, username });
+    // TODO: 최적화 필요 => user 조회가 2번 들어간다.
     await this.userService.updateTokens(id, newAccessToken, refreshToken);
 
     return newAccessToken;

@@ -29,13 +29,40 @@ export default SchemaConfig.from({
 
   cookie: {
     secret: process.env.COOKIE_SECRET,
-    accessCookie: {
+    // AuthModule에서 사용
+    jwtCookieConfig: {
       key: process.env.COOKIE_KEY,
       options: {
         domain: process.env.COOKIE_DOMAIN,
         path: process.env.COOKIE_PATH,
         httpOnly: true,
-        maxAge: +process.env.COOKIE_MAXAGE, // ms 단위
+        maxAge: +process.env.JWT_REFRESH_TOKEN_EXPIRATION_TIME + 32400000, // ms 단위
+        sameSite: false,
+        signed: true,
+        secure: false,
+      },
+    },
+    // AuthV2Module에서 사용
+    accessCookie: {
+      key: process.env.COOKIE_KEY + '_access',
+      options: {
+        domain: process.env.COOKIE_DOMAIN,
+        path: process.env.COOKIE_PATH,
+        httpOnly: true,
+        maxAge: +process.env.JWT_ACCESS_TOKEN_EXPIRATION_TIME + 32400000, // ms 단위
+        sameSite: false,
+        signed: true,
+        secure: false,
+      },
+    },
+    // AuthV2Module에서 사용
+    refreshCookie: {
+      key: process.env.COOKIE_KEY + '_refresh',
+      options: {
+        domain: process.env.COOKIE_DOMAIN,
+        path: process.env.COOKIE_PATH,
+        httpOnly: true,
+        maxAge: +process.env.JWT_REFRESH_TOKEN_EXPIRATION_TIME + 32400000, // ms 단위
         sameSite: false,
         signed: true,
         secure: false,
