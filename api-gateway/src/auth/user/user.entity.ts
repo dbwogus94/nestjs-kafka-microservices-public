@@ -1,19 +1,29 @@
 import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { Exclude, Expose } from 'class-transformer';
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { Timestamp } from 'src/common/entity/timestamp.entity';
 import { Column, Entity } from 'typeorm';
 
-@Entity('user')
+@Entity('admin_user')
 export class User extends Timestamp {
   @ApiProperty({ description: '로그인 ID', uniqueItems: true })
   @Expose()
   @Column('varchar', { unique: true, comment: '로그인 ID' })
+  @IsNotEmpty()
+  @IsString()
   username: string;
 
+  @ApiProperty({ description: '관리자 이름', uniqueItems: true })
+  @Expose()
+  @Column('varchar', { unique: true, comment: '관리자 이름' })
+  @IsNotEmpty()
+  @IsString()
+  name: string;
+
   @ApiProperty({ description: '패스워드' })
-  @Exclude()
+  // @Exclude() // 제거 하지 않고 하는 방법은?
   @Column('varchar', { comment: '패스워드' })
+  @IsNotEmpty()
   @IsString()
   password: string;
 

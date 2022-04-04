@@ -3,6 +3,8 @@ import { SchemaConfig } from './schema.config';
 export default SchemaConfig.from({
   port: +process.env.PORT,
 
+  salt: +process.env.BCRYPT_SALT,
+
   database: {
     host: process.env.DATABASE_HOST,
     username: process.env.DATABASE_USER,
@@ -17,11 +19,27 @@ export default SchemaConfig.from({
     issuer: process.env.JWT_ISSUER,
     access: {
       secret: process.env.JWT_ACCESS_TOKEN_SECRET,
-      expiration: process.env.JWT_ACCESS_TOKEN_EXPIRATION_TIME,
+      expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRATION_TIME, // ms 단위
     },
     refresh: {
       secret: process.env.JWT_REFRESH_TOKEN_SECRET,
-      expiration: process.env.JWT_REFRESH_TOKEN_EXPIRATION_TIME,
+      expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRATION_TIME, // ms 단위
+    },
+  },
+
+  cookie: {
+    secret: process.env.COOKIE_SECRET,
+    jwtCookieConfig: {
+      key: process.env.COOKIE_KEY,
+      options: {
+        domain: process.env.COOKIE_DOMAIN,
+        path: process.env.COOKIE_PATH,
+        httpOnly: true,
+        maxAge: +process.env.COOKIE_MAXAGE, // ms 단위
+        sameSite: false,
+        signed: true,
+        secure: false,
+      },
     },
   },
 
