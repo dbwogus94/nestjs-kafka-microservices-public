@@ -12,13 +12,16 @@ import {
 @Injectable()
 export class ProductHttpService {
   private readonly productHost: string;
+  private readonly stockHost: string;
 
   constructor(
     private httpService: CustomHttpService,
     private configService: ConfigService,
   ) {
-    const { productHost } = this.configService.get<ServiceHost>('serviceHost');
+    const { productHost, stockHost } =
+      this.configService.get<ServiceHost>('serviceHost');
     this.productHost = productHost;
+    this.stockHost = stockHost;
   }
 
   async callGetProducts(): Promise<ProductDTO[]> {
@@ -33,19 +36,33 @@ export class ProductHttpService {
     });
   }
 
-  async callGetProduct(
-    productId: number,
-    include?: 'stocks' | 'logistics' | 'stocks,logistics' | 'logistics,stocks', // 개선 필요
-  ): Promise<ProductDTO> {
-    const url = !!include
-      ? `${this.productHost}/${productId}?include=${include}`
-      : `${this.productHost}/${productId}`;
+  async callGetProduct(productId: number): Promise<ProductDTO> {
+    const url = `${this.productHost}/${productId}`;
 
     const data = await this.httpService.send('get', url);
     return plainToInstance(ProductDTO, data, {
       enableImplicitConversion: true,
       exposeUnsetFields: false,
     });
+  }
+
+  async callGetProductIncludeStock(productId: number): Promise<ProductDTO> {
+    const productUrl = `${this.productHost}/${productId}`;
+    const stockUrl = `${this.stockHost}/${productId}/stocks`;
+
+    const [product, stock] = await Promise.all([
+      this.httpService.send('get', productUrl),
+      this.httpService.send('get', stockUrl),
+    ]);
+
+    return plainToInstance(
+      ProductDTO,
+      { ...product, stock },
+      {
+        enableImplicitConversion: true,
+        exposeUnsetFields: false,
+      },
+    );
   }
 
   async callPostProduct(body: CreateProductDTO): Promise<ProductDTO> {

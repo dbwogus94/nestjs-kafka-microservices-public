@@ -11,8 +11,8 @@ export default SchemaConfig.from({
     password: process.env.DATABASE_PASSWORD,
     database: process.env.DATABASE_NAME_DEV,
     port: +process.env.DATABASE_PORT,
-    dropSchema: true,
-    synchronize: true,
+    dropSchema: false,
+    synchronize: false,
   },
 
   jwt: {

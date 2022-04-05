@@ -55,7 +55,9 @@ export class ProductController {
     @Param('id', new ParseIntPipe()) productId: number,
   ) {
     const { include } = optionDTO;
-    return this.productService.callGetProduct(productId, include);
+    return include === 'stocks'
+      ? this.productService.callGetProductIncludeStock(productId)
+      : this.productService.callGetProduct(productId);
   }
 
   @Post()
