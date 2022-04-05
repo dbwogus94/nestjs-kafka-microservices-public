@@ -42,9 +42,16 @@ export class KafkaService {
       }
 
       const { message, ...others } = log;
-      if (logger[loggerMethod]) {
+      if (loggerMethod === 'error') {
         logger[loggerMethod](
           `${label} [${namespace}] ${message} ${JSON.stringify(others)}`,
+          {},
+          'KafkaService',
+        );
+      } else if (logger[loggerMethod]) {
+        logger[loggerMethod](
+          `${label} [${namespace}] ${message} ${JSON.stringify(others)}`,
+          'KafkaService',
         );
       }
     };
