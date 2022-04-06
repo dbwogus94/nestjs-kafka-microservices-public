@@ -6,7 +6,8 @@ import { CustomHttpService } from './custom-http.service';
 export class CustomHttpModule {
   static register(): DynamicModule {
     return {
-      module: HttpModule,
+      module: CustomHttpModule,
+      imports: [HttpModule],
       providers: [CustomHttpService, Logger],
       exports: [CustomHttpService],
       global: true,
